@@ -74,8 +74,7 @@ fun SettingsScreen(navController: NavController) {
         }
         // One tab per group, so the page is no longer one long list.
         var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0) }
-        val tabs = listOf(R.string.settings_section_playback, R.string.settings_section_downloads, R.string.settings_tab_appearance,
-            R.string.settings_tab_about)
+        val tabs = listOf(R.string.settings_section_playback, R.string.settings_tab_appearance, R.string.settings_tab_about)
         androidx.compose.material3.ScrollableTabRow(
             selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = AppText, edgePadding = 12.dp,
             indicator = { positions ->
@@ -178,11 +177,6 @@ fun SettingsScreen(navController: NavController) {
             )
             }
             if (tab == 1) {
-            Section(R.string.settings_section_downloads)
-            DownloadQualityPicker()
-            if (com.music.spotui.data.offline.OfflineStore.tracks.isNotEmpty()) RemoveDownloadsRow()
-            }
-            if (tab == 2) {
 
             Section(R.string.settings_section_display)
             OptionRow(
@@ -214,7 +208,7 @@ fun SettingsScreen(navController: NavController) {
             OrientationRow()
             LanguageRow()
             }
-            if (tab == 3) {
+            if (tab == 2) {
             Section(R.string.settings_section_app)
             AboutRow()
             // A18: the launch check can be turned off; the manual check below keeps working.

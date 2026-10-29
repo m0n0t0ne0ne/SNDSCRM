@@ -201,47 +201,6 @@ fun SongOptionsSheet(
                     onOpenQueue()
                 }
             }
-            val offline = com.music.spotui.data.offline.OfflineStore.statusOf(downloadKey)
-            when {
-                offline == com.music.spotui.data.offline.OfflineStatus.Done -> MenuRow(
-                    null, stringResource(R.string.context_menu_undownload),
-                    leading = { DownloadBadge(offline, size = 22.dp) },
-                ) {
-                    // An episode is kept by its own key (no list holds it): it goes straight.
-                    val gone = if (episodeKey != null) {
-                        com.music.spotui.data.offline.PodcastDownloader.remove(downloadKey)
-                        true
-                    } else com.music.spotui.data.offline.OfflineCollections.removeSong(downloadKey)
-                    toast(context.getString(if (gone) R.string.toast_undownload else R.string.download_kept_by_list))
-                    onDismiss()
-                }
-                offline == com.music.spotui.data.offline.OfflineStatus.Queued ||
-                    offline is com.music.spotui.data.offline.OfflineStatus.Downloading -> MenuRow(
-                    null, stringResource(R.string.download_cancel),
-                    leading = { DownloadBadge(offline, size = 22.dp) },
-                ) {
-                    if (episodeKey != null) com.music.spotui.data.offline.PodcastDownloader.cancel(downloadKey)
-                    else com.music.spotui.data.offline.OfflineDownloader.cancel(downloadKey)
-                    onDismiss()
-                }
-                // Enabled for episodes too: refused ones keep the error badge, and a tap tries
-                // again (the audio URL is resolved at that moment, so a retry can succeed).
-                else -> MenuRow(
-                    Icons.Outlined.ArrowCircleDown, stringResource(R.string.context_menu_download),
-                    enabled = downloadKey.isNotBlank(),
-                    leading = if (offline != null) ({ DownloadBadge(offline, size = 22.dp) }) else null,
-                ) {
-                    if (episodeKey != null) {
-                        // No quality dialog: it is the publisher's own file, encoded once.
-                        com.music.spotui.data.offline.PodcastDownloader.enqueue(song)
-                    } else com.music.spotui.ui.components.DownloadAsk.start(context) { q ->
-                        com.music.spotui.data.offline.OfflineCollections.downloadSong(song, q)
-                        com.music.spotui.di.Haptics.confirm()
-                        toast(context.getString(R.string.download_notification_downloading))
-                    }
-                    onDismiss()
-                }
-            }
             MenuRow(Icons.Outlined.Radio, stringResource(R.string.context_menu_go_to_song_radio), enabled = hasId) {
                 onDismiss()
                 playerViewModel.goToSongRadio(song.spotifyTrackId, song.title,

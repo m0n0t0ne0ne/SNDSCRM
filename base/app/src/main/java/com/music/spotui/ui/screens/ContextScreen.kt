@@ -832,30 +832,6 @@ private fun ContextContent(navController: NavController, vm: ContextViewModel, p
                         LikeButton(liked = SongPlayer.library[p.uri] ?: contextSaved, size = 28.dp) { vm.toggleContextSaved(p) }
                         Spacer(Modifier.width(20.dp))
                     }
-                    // Once per list, not at every redraw of the header (6000 songs, mapped each time).
-                    val ids = remember(p.tracks) { p.tracks.map { it.spotifyTrackId }.filter { it.isNotBlank() }.distinct() }
-                    // Songs with no matching recording count as settled: the list can still be removed.
-                    val downloadedCount = ids.count {
-                        com.music.spotui.data.offline.OfflineStore.isDownloaded(it) ||
-                            com.music.spotui.data.offline.OfflineStore.status[it] == com.music.spotui.data.offline.OfflineStatus.Unavailable
-                    }
-                    val busy = ids.any {
-                        val st = com.music.spotui.data.offline.OfflineStore.status[it]
-                        st == com.music.spotui.data.offline.OfflineStatus.Queued || st is com.music.spotui.data.offline.OfflineStatus.Downloading
-                    }
-                    // A list downloaded as a whole stays in step with Spotify (new songs in, gone songs out).
-                    val listKept = com.music.spotui.data.offline.OfflineCollections.isDownloaded(p.uri)
-                    LaunchedEffect(listKept, p.complete, p.tracks.size) { if (listKept && p.complete) com.music.spotui.data.offline.OfflineCollections.sync(p) }
-                    com.music.spotui.ui.components.DownloadListButton(downloadedCount, ids.size, busy, kept = listKept) {
-                        if (listKept) askRemoveDownloads = true
-                        else {
-                            com.music.spotui.ui.components.DownloadAsk.start(context) { q ->
-                                com.music.spotui.di.Haptics.confirm()
-                                com.music.spotui.data.offline.OfflineCollections.download(p, q)
-                                android.widget.Toast.makeText(context, context.getString(R.string.download_notification_downloading), android.widget.Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
                     if (p.type == "playlist" || p.type == "album") {
                         Spacer(Modifier.width(16.dp))
                         Icon(Icons.Default.MoreVert, stringResource(R.string.content_description_context_menu), tint = AppText.copy(alpha = 0.8f),
