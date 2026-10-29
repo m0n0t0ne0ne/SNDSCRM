@@ -319,10 +319,6 @@ fun SongOptionsSheet(
                     tint = if (active) MenuGreen else MenuIconColor,
                 ) { showSleep = true }
             }
-            // Entries from extensions (menu.items), after the app's own; each names its extension.
-            if (hasId) com.music.spotui.extensions.ExtensionMenuEntries(
-                app.myspoti.extensions.Surface.TRACK_MENU, "spotify:track:${song.spotifyTrackId}", song.title, song.singer, onDone = onDismiss,
-            )
             Spacer(Modifier.height(12.dp))
         }
     }
@@ -388,16 +384,6 @@ internal fun CreditsSheet(song: SongsModel, onDismiss: () -> Unit) {
                     Text(role.artists.joinToString(", ") { it.name }, color = AppText, fontSize = 16.sp)
                     Text(role.role, color = AppMuted, fontSize = 13.sp)
                 }
-            }
-            // What extensions add about the song (trackinfo.provide), under Spotify's credits.
-            if (song.spotifyTrackId.isNotBlank()) {
-                val info = androidx.compose.runtime.remember(song.spotifyTrackId) {
-                    com.music.spotui.extensions.Extensions.trackInfo(song.spotifyTrackId, song.title, song.singer, song.album, song.durationMs.toLong(), song.coverUri)
-                }
-                com.music.spotui.extensions.ExtensionBlocks(
-                    app.myspoti.extensions.Hook.TRACK_INFO, app.myspoti.extensions.Surface.TRACK_INFO, info.toJson(),
-                    context = com.music.spotui.extensions.placeJson("track", info.uri, info.title, info.artist),
-                )
             }
         }
     }

@@ -68,13 +68,32 @@ class MainActivity : AppCompatActivity() {
     private val prefs get() = getSharedPreferences("myspoti_prefs", Context.MODE_PRIVATE)
 
 
+    /**
+     * Marks every former setup step as done (so no page ever asks again) and, the first time
+     * only, asks Android for the permissions the last step used to offer.
+     */
+    private fun finishSetupOnce() {
+        val firstTime = !com.music.spotui.ui.screens.Setup.permissionsDone(this)
+        com.music.spotui.ui.screens.Setup.done(this)
+        com.music.spotui.ui.screens.Setup.setExtensionsSeen(this)
+        com.music.spotui.data.preferences.setQualityChosen(this)
+        com.music.spotui.data.preferences.LookPref.setChosen(this)
+        if (!firstTime) return
+        val wanted = buildList {
+            if (android.os.Build.VERSION.SDK_INT >= 33) add(android.Manifest.permission.POST_NOTIFICATIONS)
+            if (android.os.Build.VERSION.SDK_INT >= 31) add(android.Manifest.permission.BLUETOOTH_CONNECT)
+        }.filter { checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
+        if (wanted.isNotEmpty()) requestPermissions(wanted.toTypedArray(), 1)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // The user's rotation choice (portrait by default); changes are applied from the UI below.
         requestedOrientation = com.music.spotui.data.preferences.OrientationPref.requested()
         signedIn = prefs.getBoolean("LoggedIn", false)
-        setupNeeded = com.music.spotui.ui.screens.Setup.needed(this)
-        lookOffered = com.music.spotui.data.preferences.LookPref.isOffered(this)
+        // No onboarding pages and no look choice: the first sign-in goes straight to the app.
+        setupNeeded = false
+        lookOffered = true
         root = FrameLayout(this)
         val compose = ComposeView(this).apply {
             setContent {
@@ -84,52 +103,16 @@ class MainActivity : AppCompatActivity() {
                         requestedOrientation = com.music.spotui.data.preferences.OrientationPref.requested()
                     }
                     androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.fillMaxSize()) {
+                        // First time signed in: what the setup pages used to settle, settled at once.
+                        // Notifications and the headphones' name are asked through Android's own prompt.
+                        if (signedIn) androidx.compose.runtime.LaunchedEffect(Unit) { finishSetupOnce() }
                         when {
-                            showLook -> com.music.spotui.ui.look.LookStep(onNext = {
-                                com.music.spotui.data.preferences.LookPref.setChosen(this@MainActivity); showLook = false
-                                setupNeeded = com.music.spotui.ui.screens.Setup.needed(this@MainActivity)
-                            })
-                            signedIn && setupNeeded -> com.music.spotui.ui.screens.SetupScreen(
-                                onDone = { setupNeeded = false },
-                            )
                             signedIn -> App()
                             connecting -> ConnectingScreen()
                             else -> WelcomeScreen(onLogin = { showLogin() })
                         }
-                        // Existing users, once, right after the update: the new look, live.
-                        if (signedIn && !setupNeeded && !showLook && !showingLogin && !inPip && !lookOffered) {
-                            if (com.music.spotui.data.preferences.LookPref.look == com.music.spotui.data.preferences.Look.IMMERSIVE) {
-                                androidx.compose.runtime.LaunchedEffect(Unit) {
-                                    com.music.spotui.data.preferences.LookPref.setOffered(this@MainActivity); lookOffered = true
-                                }
-                            } else {
-                                val close = { look: com.music.spotui.data.preferences.Look ->
-                                    com.music.spotui.data.preferences.LookPref.set(this@MainActivity, look)
-                                    com.music.spotui.data.preferences.LookPref.setOffered(this@MainActivity)
-                                    lookOffered = true
-                                }
-                                val keep = { close(com.music.spotui.data.preferences.Look.CLASSIC) }
-                                androidx.compose.ui.window.Dialog(
-                                    onDismissRequest = keep,
-                                    properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-                                ) {
-                                    com.music.spotui.ui.look.LookStep(
-                                        onNext = { close(com.music.spotui.data.preferences.Look.IMMERSIVE) },
-                                        offer = com.music.spotui.ui.look.LookOffer(onKeep = keep),
-                                    )
-                                }
-                            }
-                        }
                         // "Ask each time": the download quality question, above every screen.
                         com.music.spotui.ui.components.DownloadAskHost()
-                        // An extension about to change the Spotify account waits for the user's yes.
-                        com.music.spotui.extensions.ExtensionConfirmHost()
-                        // An extension's sign-in page, in a web view of its own.
-                        com.music.spotui.extensions.ExtensionAuthHost()
-                        // Beta and dev builds only: hold the faint dot to copy the recent logs.
-                        if (com.music.spotui.data.api.UpdateChecker.isBeta || app.myspoti.engine.BuildConfig.DEBUG)
-                            com.music.spotui.ui.components.BetaLogButton(
-                                androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomEnd))
                         // Picture-in-picture: the clip alone, over the app (which stays composed underneath,
                         // so coming back finds the same screen).
                         if (inPip) com.music.spotui.ui.components.PipVideo()
@@ -144,11 +127,6 @@ class MainActivity : AppCompatActivity() {
         // Debug builds: `am start ... --ez showPlayer true` shows the Web Player page full screen.
         val debuggable = applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
         MyspotiRuntime.host.attach(root, visible = debuggable && intent.getBooleanExtra("showPlayer", false))
-        showLook = debuggable && intent.getBooleanExtra("showLook", false)
-        // Debug builds: `am start ... --ez resetLookOffer true` shows the new-look popup again.
-        if (debuggable && intent.getBooleanExtra("resetLookOffer", false)) {
-            com.music.spotui.data.preferences.LookPref.clearOffered(this); lookOffered = false
-        }
         watchSession()
         watchLoginReturn()
         watchLogout()

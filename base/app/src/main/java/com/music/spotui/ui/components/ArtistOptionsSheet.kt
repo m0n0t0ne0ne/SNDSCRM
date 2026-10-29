@@ -92,7 +92,6 @@ fun ArtistOptionsSheet(artistId: String, artistName: String, artistImage: String
                 com.music.spotui.di.Haptics.confirm()
                 onDismiss()
             }
-            com.music.spotui.extensions.ExtensionMenuEntries(app.myspoti.extensions.Surface.ARTIST_MENU, if (artistId.isBlank()) "" else uri, artistName, onDone = onDismiss)
             Spacer(Modifier.height(12.dp))
         }
     }

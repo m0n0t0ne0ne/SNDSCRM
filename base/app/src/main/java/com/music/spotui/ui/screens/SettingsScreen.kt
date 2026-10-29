@@ -75,7 +75,7 @@ fun SettingsScreen(navController: NavController) {
         // One tab per group, so the page is no longer one long list.
         var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0) }
         val tabs = listOf(R.string.settings_section_playback, R.string.settings_section_downloads, R.string.settings_tab_appearance,
-            R.string.extensions_title, R.string.settings_tab_about)
+            R.string.settings_tab_about)
         androidx.compose.material3.ScrollableTabRow(
             selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = AppText, edgePadding = 12.dp,
             indicator = { positions ->
@@ -180,22 +180,6 @@ fun SettingsScreen(navController: NavController) {
             if (tab == 1) {
             Section(R.string.settings_section_downloads)
             DownloadQualityPicker()
-            // Where downloads come from: the download-source extensions, in the order they are asked.
-            if (com.music.spotui.extensions.Extensions.sources(app.myspoti.extensions.Action.DOWNLOAD_SOURCE).isNotEmpty())
-                SourcesBlock(app.myspoti.extensions.Action.DOWNLOAD_SOURCE, navController)
-            else Column(
-                Modifier.fillMaxWidth().clickable { navController.navigate(com.music.spotui.ui.navigation.Routes.Extensions.route) }
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-            ) {
-                Text(stringResource(R.string.downloads_source_row_title), color = AppText, fontSize = 16.sp)
-                Text(
-                    stringResource(
-                        if (com.music.spotui.extensions.Extensions.hasDownloadSource()) R.string.downloads_source_row_on
-                        else R.string.downloads_source_row_off,
-                    ),
-                    color = AppMuted, fontSize = 12.sp,
-                )
-            }
             if (com.music.spotui.data.offline.OfflineStore.tracks.isNotEmpty()) RemoveDownloadsRow()
             }
             if (tab == 2) {
@@ -227,22 +211,10 @@ fun SettingsScreen(navController: NavController) {
                 onChecked = { com.music.spotui.data.preferences.SolidNavBar.set(ctx, it) },
             )
             AccentRow(com.music.spotui.data.preferences.Look.CLASSIC)
-            LookRow()
             OrientationRow()
             LanguageRow()
             }
             if (tab == 3) {
-            ExtensionSettingsRows(navController)
-            // Third-party extensions: lyrics, a song's audio, scripts reacting to the music.
-            Column(
-                Modifier.fillMaxWidth().clickable { navController.navigate(com.music.spotui.ui.navigation.Routes.Extensions.route) }
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-            ) {
-                Text(stringResource(R.string.extensions_title), color = AppText, fontSize = 16.sp)
-                Text(stringResource(R.string.extensions_row_detail), color = AppMuted, fontSize = 12.sp)
-            }
-            }
-            if (tab == 4) {
             Section(R.string.settings_section_app)
             AboutRow()
             // A18: the launch check can be turned off; the manual check below keeps working.

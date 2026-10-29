@@ -228,11 +228,6 @@ fun PlaylistOptionsSheet(
                     onDismiss(); onProfile(page.ownerUri.substringAfterLast(':'))
                 }
             }
-            // Entries from extensions (menu.items), after the app's own.
-            com.music.spotui.extensions.ExtensionMenuEntries(
-                if (page.type == "album") app.myspoti.extensions.Surface.ALBUM_MENU else app.myspoti.extensions.Surface.PLAYLIST_MENU,
-                page.uri, page.name, page.ownerName, onDone = onDismiss,
-            )
         }
     }
 

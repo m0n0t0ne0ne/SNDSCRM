@@ -387,14 +387,6 @@ fun SumUpSearchScreen(
                     }, onLongClick = { menuSong = ep })
                 }
             }
-            // What extensions add for this search (search.provide), under Spotify's results.
-            if (filter != SearchFilter.Profiles) item {
-                com.music.spotui.extensions.ExtensionBlocks(
-                    app.myspoti.extensions.Hook.SEARCH, app.myspoti.extensions.Surface.SEARCH,
-                    kotlinx.serialization.json.buildJsonObject { put("query", kotlinx.serialization.json.JsonPrimitive(text.trim())) }.toString(),
-                    delayMs = 400,
-                )
-            }
             }
         }
 

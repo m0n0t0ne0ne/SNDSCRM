@@ -24,13 +24,16 @@ object LookPref {
     private const val KEY_CHOSEN = "look_chosen"
     private const val KEY_OFFERED = "look_offered"
 
-    /** The chosen look, as Compose state: everything reading it redraws when it changes. */
-    var look by mutableStateOf(Look.of(prefs(com.music.spotui.di.Graph.app).getString(KEY, null)))
+    /**
+     * The look, fixed to the modernized classic one: the choice between looks was removed, so
+     * a saved "Immersive" from before is ignored and nothing can switch to it.
+     */
+    var look by mutableStateOf(Look.CLASSIC)
         private set
 
+    @Suppress("UNUSED_PARAMETER")
     fun set(c: Context, value: Look) {
-        look = value
-        prefs(c).edit().putString(KEY, value.name).apply()
+        look = Look.CLASSIC
     }
 
     /** The look step of the onboarding was seen (new installs and updates alike). */

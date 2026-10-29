@@ -240,8 +240,6 @@ fun HomeFeedContent(navController: NavController, feed: HomeFeedModel, facet: St
         items(carousels.size, key = { carouselKeys[it] }) { i ->
             HomeFeedSection(navController, carousels[i])
         }
-        // Sections from extensions (home.sections), after Spotify's own, each under its extension's name.
-        item { com.music.spotui.extensions.ExtensionBlocks(app.myspoti.extensions.Hook.HOME, app.myspoti.extensions.Surface.HOME, "{}") }
     }
 }
 
@@ -526,25 +524,6 @@ private fun ProfileSheet(onOpen: (route: String) -> Unit = {}, onDismiss: () -> 
             ) {
                 Text(stringResource(R.string.friends_title), color = AppText, fontSize = 16.sp)
                 Text(stringResource(R.string.friends_detail), color = AppMuted, fontSize = 12.sp)
-            }
-            // Third-party extensions (lyrics, audio, scripts): installed, enabled, repositories.
-            val extRegistry by com.music.spotui.extensions.Extensions.registry.collectAsState()
-            Row(
-                Modifier.fillMaxWidth().clickable { onOpen(com.music.spotui.ui.navigation.Routes.Extensions.route) }
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.extensions_title), color = AppText, fontSize = 16.sp)
-                    val installed = extRegistry.extensions
-                    Text(
-                        if (installed.isEmpty()) stringResource(R.string.extensions_row_detail)
-                        else stringResource(R.string.extensions_row_count, installed.size, installed.count { it.enabled }),
-                        color = AppMuted, fontSize = 12.sp,
-                    )
-                }
-                androidx.compose.material3.Icon(Icons.Filled.Extension, null, tint = AppMuted,
-                    modifier = Modifier.padding(start = 12.dp).size(22.dp))
             }
             // The Spotify account page (plan, privacy, devices), in the app's signed-in browser.
             androidx.compose.foundation.layout.Column(
