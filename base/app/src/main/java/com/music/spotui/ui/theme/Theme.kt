@@ -11,14 +11,14 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 /**
- * Spotify's dark palette, so the Material components that read the scheme (switches,
- * sliders, dialogs, spinners, text fields, menus) look like the official app: accent
- * green on black, #121212 background, #1F1F1F/#282828 raised surfaces, #B3B3B3
- * secondary text, and no tonal tint on elevated surfaces.
+ * The modernized dark palette, so the Material components that read the scheme (switches,
+ * sliders, dialogs, spinners, text fields, menus) match the screens: accent green on a
+ * near-black page, the cool layered surfaces from [tone], and no tonal tint on elevated surfaces.
  */
 private fun spotifyColorScheme(accent: Color) = darkColorScheme(
     primary = accent,
@@ -27,29 +27,29 @@ private fun spotifyColorScheme(accent: Color) = darkColorScheme(
     onPrimaryContainer = Color.Black,
     secondary = Color.White,
     onSecondary = Color.Black,
-    secondaryContainer = Color(0xFF2A2A2A),
+    secondaryContainer = tone(0xFF2A2A2A),
     onSecondaryContainer = Color.White,
     tertiary = accent,
     onTertiary = Color.Black,
     background = AppBackground,
-    onBackground = Color.White,
+    onBackground = AppText,
     surface = AppBackground,
-    onSurface = Color.White,
-    surfaceVariant = Color(0xFF2A2A2A),
-    onSurfaceVariant = Color(0xFFB3B3B3),
+    onSurface = AppText,
+    surfaceVariant = tone(0xFF2A2A2A),
+    onSurfaceVariant = AppMuted,
     surfaceTint = Color.Transparent,
     surfaceDim = AppBackground,
-    surfaceBright = Color(0xFF2A2A2A),
+    surfaceBright = tone(0xFF2A2A2A),
     surfaceContainerLowest = AppBackground,
-    surfaceContainerLow = Color(0xFF181818),
-    surfaceContainer = Color(0xFF1F1F1F),
-    surfaceContainerHigh = Color(0xFF282828),
-    surfaceContainerHighest = Color(0xFF3E3E3E),
+    surfaceContainerLow = tone(0xFF181818),
+    surfaceContainer = tone(0xFF1F1F1F),
+    surfaceContainerHigh = tone(0xFF282828),
+    surfaceContainerHighest = tone(0xFF3E3E3E),
     inverseSurface = Color.White,
     inverseOnSurface = Color.Black,
     inversePrimary = accent,
-    outline = Color(0xFF727272),
-    outlineVariant = Color(0xFF3E3E3E),
+    outline = Color(0xFF6E6E78),
+    outlineVariant = tone(0xFF3E3E3E),
     error = Color(0xFFF3727F),
     onError = Color.Black,
     scrim = Color.Black,
@@ -89,6 +89,14 @@ fun SpotuiTheme(
     MaterialTheme(
         colorScheme = visualScheme,
         typography = Typography,
+        // Rounder Material components (dialogs, menus, text fields, cards) to match the screens.
+        shapes = androidx.compose.material3.Shapes(
+            extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+            small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+            medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+            large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+            extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+        ),
     ) {
         // Bare Text() uses LocalTextStyle, which MaterialTheme does NOT derive
         // from the typography — so provide Montserrat as the global default so

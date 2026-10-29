@@ -13,4 +13,4 @@ import androidx.compose.ui.unit.dp
  * staying under them.
  */
 @Composable
-fun bottomBarsSpace(): Dp = 160.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+fun bottomBarsSpace(): Dp = 172.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()

@@ -33,15 +33,47 @@ val AppSansTitle = AppSans
 val Montserrat = AppSans
 
 private val base = TextStyle(fontFamily = AppSans)
-private val title = TextStyle(fontFamily = AppSansTitle, fontWeight = FontWeight.Bold)
+private val title = TextStyle(fontFamily = AppSansTitle, fontWeight = FontWeight.ExtraBold)
 
+/*
+ * A real scale instead of one size for everything: big, tight display titles for page headers,
+ * firm section titles, and comfortable body text. Negative tracking on the large sizes keeps
+ * heavy Manrope from looking loose.
+ */
 val Typography = Typography(
-    displayLarge = title, displayMedium = title, displaySmall = title,
-    headlineLarge = title, headlineMedium = title, headlineSmall = title,
-    titleLarge = base.copy(fontWeight = FontWeight.Bold),
-    titleMedium = base.copy(fontWeight = FontWeight.Bold),
-    titleSmall = base.copy(fontWeight = FontWeight.Bold),
+    displayLarge = title.copy(fontSize = 52.sp, lineHeight = 54.sp, letterSpacing = (-1.6).sp),
+    displayMedium = title.copy(fontSize = 42.sp, lineHeight = 46.sp, letterSpacing = (-1.2).sp),
+    displaySmall = title.copy(fontSize = 34.sp, lineHeight = 38.sp, letterSpacing = (-0.9).sp),
+    headlineLarge = title.copy(fontSize = 30.sp, lineHeight = 34.sp, letterSpacing = (-0.8).sp),
+    headlineMedium = title.copy(fontSize = 26.sp, lineHeight = 30.sp, letterSpacing = (-0.6).sp),
+    headlineSmall = title.copy(fontSize = 23.sp, lineHeight = 28.sp, letterSpacing = (-0.5).sp),
+    titleLarge = base.copy(fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
+    titleMedium = base.copy(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
+    titleSmall = base.copy(fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold),
     bodyLarge = base.copy(fontSize = 16.sp, lineHeight = 24.sp),
-    bodyMedium = base, bodySmall = base,
-    labelLarge = base, labelMedium = base, labelSmall = base,
+    bodyMedium = base.copy(fontSize = 14.sp, lineHeight = 20.sp),
+    bodySmall = base.copy(fontSize = 12.sp, lineHeight = 16.sp),
+    labelLarge = base.copy(fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold),
+    labelMedium = base.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
+    labelSmall = base.copy(fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.4.sp),
 )
+
+/** Named styles the classic screens use directly, so they share one scale. */
+object AppType {
+    /** "Good evening", page titles in the top bar. */
+    val Greeting = title.copy(fontSize = 28.sp, lineHeight = 32.sp, letterSpacing = (-0.8).sp)
+    /** Home and artist section titles ("Made for you", "Popular"). */
+    val Section = title.copy(fontSize = 23.sp, lineHeight = 28.sp, letterSpacing = (-0.55).sp)
+    /** Album, playlist and artist names in the page header. */
+    val PageTitle = title.copy(fontSize = 34.sp, lineHeight = 38.sp, letterSpacing = (-1.0).sp)
+    /** Artist name over the hero image. */
+    val Hero = title.copy(fontSize = 52.sp, lineHeight = 54.sp, letterSpacing = (-1.8).sp)
+    /** Song title in the full player. */
+    val PlayerTitle = title.copy(fontSize = 24.sp, lineHeight = 29.sp, letterSpacing = (-0.6).sp)
+    /** Card and row titles. */
+    val ItemTitle = base.copy(fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.15).sp)
+    /** Card and row subtitles. */
+    val ItemSub = base.copy(fontSize = 12.5.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium)
+    /** Small uppercase labels ("ALBUM", "PLAYING FROM"). */
+    val Eyebrow = base.copy(fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+}

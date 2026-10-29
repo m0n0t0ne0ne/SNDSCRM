@@ -94,6 +94,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -546,7 +547,10 @@ fun PlayerScreen(navController: NavController) {
                         transition = CrossFade,
                         modifier = (if (immersive) Modifier.fillMaxSize()
                             // Normal layout keeps the inset, rounded cover.
-                            else Modifier.padding(horizontal = coverInset).aspectRatio(1f).clip(RoundedCornerShape(8.dp)))
+                            // A rounder cover lifted off the page by a soft shadow.
+                            else Modifier.padding(horizontal = coverInset).aspectRatio(1f)
+                                .shadow(28.dp, com.music.spotui.ui.theme.AppShapes.CoverLarge, clip = false)
+                                .clip(com.music.spotui.ui.theme.AppShapes.CoverLarge))
                             .graphicsLayer {
                                 alpha = coverAlpha
                                 val grow = 1f + (1f - coverAlpha) * 0.06f
@@ -1071,9 +1075,7 @@ fun PlayerInfo(
                     ) { onTitleClick() } else Modifier),
                 text = if (adPlaying) stringResource(R.string.ad_playing) else songTitle,
                 color = Color.White,
-                fontSize = 22.sp,
-                lineHeight = 26.sp,
-                fontWeight = FontWeight.Bold,
+                style = com.music.spotui.ui.theme.AppType.PlayerTitle,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 softWrap = false,
             )
@@ -1086,8 +1088,9 @@ fun PlayerInfo(
                 }
                 Text(
                     text = songSinger,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = Color.White.copy(alpha = 0.72f),
                     fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     modifier = if (onArtistClick != null) Modifier.clickable(
@@ -1177,12 +1180,13 @@ fun SpotifySeekBar(
             }
     ) {
         val y = size.height / 2
-        // Official: a hairline track and a small knob (the old one was thicker and bigger).
-        val track = 2.dp.toPx()
+        // A slightly fuller, rounded track with a crisp knob: easier to see and to grab.
+        val track = 4.dp.toPx()
         val f = fraction().coerceIn(0f, 1f)
-        drawLine(Color.White.copy(alpha = 0.3f), androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), track, androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(Color.White.copy(alpha = 0.22f), androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), track, androidx.compose.ui.graphics.StrokeCap.Round)
         drawLine(Color.White, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width * f, y), track, androidx.compose.ui.graphics.StrokeCap.Round)
-        drawCircle(Color.White, radius = 5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(size.width * f, y))
+        drawCircle(Color.Black.copy(alpha = 0.25f), radius = 8.dp.toPx(), center = androidx.compose.ui.geometry.Offset(size.width * f, y + 1.dp.toPx()))
+        drawCircle(Color.White, radius = 7.dp.toPx(), center = androidx.compose.ui.geometry.Offset(size.width * f, y))
     }
 }
 
@@ -1287,7 +1291,7 @@ fun PlayerFull(
             modifier = Modifier
                 // requiredSize forces an exact 64×64 square even if the parent Column
                 // constrains height — .size() alone let it get squished into an ellipse.
-                .requiredSize(64.dp)  // never below 56dp
+                .requiredSize(68.dp)  // never below 56dp
                 .pressable(pressedScale = 0.92f) {
                     if (songPlayingState) {
                         SongPlayer.pause()
@@ -1319,7 +1323,7 @@ fun PlayerFull(
             contentAlignment = Alignment.Center
         ) {
             com.music.spotui.ui.components.PlayPauseIcon(
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier.size(34.dp),
                 tint = Color.Black,
                 playing = songPlayingState,
                 contentDescription = stringResource(if (songPlayingState) R.string.notif_action_pause else R.string.notif_action_play))

@@ -15,6 +15,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -124,9 +125,9 @@ fun MainBottomNavigation(navController: NavHostController, bottomBarState: Mutab
                         // so covers scrolling underneath never compete with the labels.
                         else Modifier.background(Brush.verticalGradient(
                             0f to Color.Transparent,
-                            0.3f to AppShade.copy(alpha = 0.7f),
-                            0.6f to AppShade.copy(alpha = 0.92f),
-                            1f to AppShade,
+                            0.3f to com.music.spotui.ui.theme.AppBackground.copy(alpha = 0.75f),
+                            0.6f to com.music.spotui.ui.theme.AppBackground.copy(alpha = 0.94f),
+                            1f to com.music.spotui.ui.theme.AppBackground,
                         ))
                     )
             ) {
@@ -205,8 +206,8 @@ fun MainBottomNavigation(navController: NavHostController, bottomBarState: Mutab
 
 // Official app metrics. Material3's NavigationBarItem measures its icon slot at a
 // fixed 24 dp, so a 28 dp Icon there was clipped back down: the bar is drawn by hand.
-private val NavBarHeight = 58.dp
-private val NavIconSize = 28.dp
+private val NavBarHeight = 62.dp
+private val NavIconSize = 26.dp
 
 /**
  * One tab of the bottom bar: a 28 dp glyph above an 11 sp medium label, the two
@@ -219,8 +220,14 @@ private fun RowScope.NavBarTab(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    // Spotify's idle grey, lighter than Color.Gray which read as "disabled".
-    val tint = if (selected) AppText else AppMuted
+    // Spotify's idle grey, lighter than Color.Gray which read as "disabled". The change eases in.
+    val tint by androidx.compose.animation.animateColorAsState(
+        if (selected) AppText else AppMuted, androidx.compose.animation.core.tween(180), label = "tabTint",
+    )
+    // A small accent bar under the selected tab's label.
+    val bar by androidx.compose.animation.core.animateDpAsState(
+        if (selected) 16.dp else 0.dp, androidx.compose.animation.core.tween(220), label = "tabBar",
+    )
     Box(
         modifier = Modifier
             .weight(1f)
@@ -251,9 +258,16 @@ private fun RowScope.NavBarTab(
                 color = tint,
                 fontSize = 11.sp,
                 lineHeight = 12.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 letterSpacing = 0.2.sp,
                 maxLines = 1,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Box(
+                modifier = Modifier
+                    .size(width = bar, height = 3.dp)
+                    .clip(com.music.spotui.ui.theme.AppShapes.Pill)
+                    .background(com.music.spotui.ui.theme.AppAccent),
             )
         }
     }

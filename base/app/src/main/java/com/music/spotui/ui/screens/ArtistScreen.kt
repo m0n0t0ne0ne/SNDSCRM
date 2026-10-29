@@ -249,8 +249,8 @@ private fun ArtistOverviewContent(
                 ) {
                     com.music.spotui.ui.components.FitText(
                         text = displayName,
-                        fontSize = 44.sp,
-                        minSize = 24.sp,
+                        fontSize = 54.sp,
+                        minSize = 26.sp,
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 2,
                     )
@@ -304,7 +304,7 @@ private fun ArtistOverviewContent(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .size(width = 36.dp, height = 48.dp)
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(com.music.spotui.ui.theme.AppShapes.Thumb)
                                 .clickable { navController.navigate(albumRoute(latest.name, displayName, latest.spotifyId)) },
                         )
                         Spacer(Modifier.width(16.dp))
@@ -315,10 +315,10 @@ private fun ArtistOverviewContent(
                             com.music.spotui.di.Haptics.toggle(on)
                             SongPlayer.setSaved("spotify:artist:${overview.id}", on)
                         }
-                        .clip(RoundedCornerShape(20.dp))
-                        .border(1.dp, Color.Gray, RoundedCornerShape(20.dp))
+                        .clip(com.music.spotui.ui.theme.AppShapes.Pill)
+                        .border(1.dp, AppText.copy(alpha = 0.35f), com.music.spotui.ui.theme.AppShapes.Pill)
                         
-                        .padding(16.dp, 7.dp),
+                        .padding(18.dp, 8.dp),
                     ) {
                         Text(
                             text = stringResource(if (SongPlayer.library["spotify:artist:${overview.id}"] ?: following) R.string.curation_button_following_state_text else R.string.curation_button_follow_state_text),
@@ -389,7 +389,7 @@ private fun ArtistOverviewContent(
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(52.dp).clip(RoundedCornerShape(4.dp))
+                        modifier = Modifier.size(52.dp).clip(com.music.spotui.ui.theme.AppShapes.Tile)
                             .background(Brush.linearGradient(listOf(Color(0xFF450AF5), Color(0xFF8E8EE5), Color(0xFFC4EFD9)))),
                     ) {
                         androidx.compose.material3.Icon(Icons.Default.Favorite, contentDescription = null, tint = AppText, modifier = Modifier.size(22.dp))
@@ -412,9 +412,8 @@ private fun ArtistOverviewContent(
                 Text(
                     text = stringResource(R.string.artist_popular_tracks),
                     color = AppText,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp, 8.dp, 16.dp, 4.dp),
+                    style = com.music.spotui.ui.theme.AppType.Section,
+                    modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 6.dp),
                 )
             }
             val popular = tracks.take(if (showAllPopular) 10 else 5)
@@ -612,7 +611,7 @@ private fun PopularTrackRow(
             modifier = Modifier
                 .padding(8.dp, 0.dp, 12.dp, 0.dp)
                 .size(48.dp)
-                .clip(RoundedCornerShape(4.dp)),
+                .clip(com.music.spotui.ui.theme.AppShapes.Thumb),
             model = song.coverUri,
             contentScale = ContentScale.Crop,
             failure = placeholder(R.drawable.placeholder),
@@ -661,10 +660,9 @@ private fun SectionHeader(title: String) {
     Text(
         text = title,
         color = AppText,
-        fontSize = 20.sp,
-        fontWeight = FontWeight.Bold,
+        style = com.music.spotui.ui.theme.AppType.Section,
         maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-        modifier = Modifier.padding(16.dp, 20.dp, 16.dp, 8.dp),
+        modifier = Modifier.padding(16.dp, 28.dp, 16.dp, 10.dp),
     )
 }
 
@@ -681,7 +679,7 @@ private fun ReleaseCard(album: AlbumsModel, onClick: () -> Unit) {
             transition = CrossFade,
             modifier = Modifier
                 .size(132.dp)
-                .clip(RoundedCornerShape(6.dp)),
+                .clip(com.music.spotui.ui.theme.AppShapes.Cover),
             model = album.coverUri,
             contentScale = ContentScale.Crop,
             failure = placeholder(R.drawable.placeholder),
@@ -713,7 +711,7 @@ private fun ReleaseRow(album: AlbumsModel, onClick: () -> Unit) {
             transition = CrossFade,
             modifier = Modifier
                 .size(88.dp)
-                .clip(RoundedCornerShape(4.dp)),
+                .clip(com.music.spotui.ui.theme.AppShapes.Tile),
             model = album.coverUri,
             contentScale = ContentScale.Crop,
             failure = placeholder(R.drawable.placeholder),
@@ -744,8 +742,8 @@ private fun ReleaseRow(album: AlbumsModel, onClick: () -> Unit) {
 private fun ShowAllButton(onClick: () -> Unit) {
     Box(modifier = Modifier.pressable(0.96f) { onClick() }
         .padding(16.dp, 10.dp, 16.dp, 4.dp)
-        .clip(RoundedCornerShape(20.dp))
-        .border(1.dp, Color.Gray, RoundedCornerShape(20.dp))
+        .clip(com.music.spotui.ui.theme.AppShapes.Pill)
+        .border(1.dp, AppText.copy(alpha = 0.35f), com.music.spotui.ui.theme.AppShapes.Pill)
         
         .padding(20.dp, 8.dp),
     ) {
@@ -810,8 +808,7 @@ fun ArtistReleasesScreen(navController: NavController, artistName: String, artis
                     Text(
                         text = stringResource(R.string.releases_title),
                         color = AppText,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = com.music.spotui.ui.theme.AppType.Section,
                     )
                 }
             }
@@ -874,10 +871,9 @@ private fun ReleaseSectionHeader(title: String) {
     Text(
         text = title,
         color = AppText,
-        fontSize = 22.sp,
-        fontWeight = FontWeight.Bold,
+        style = com.music.spotui.ui.theme.AppType.Section,
         maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-        modifier = Modifier.padding(16.dp, 18.dp, 16.dp, 8.dp),
+        modifier = Modifier.padding(16.dp, 22.dp, 16.dp, 10.dp),
     )
 }
 

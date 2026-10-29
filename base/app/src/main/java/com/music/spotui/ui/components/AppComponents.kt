@@ -47,6 +47,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -263,15 +264,17 @@ fun MiniPlayer(navController: NavHostController) {
             // Where the full player rises from and sinks back to.
             .onGloballyPositioned { com.music.spotui.ui.navigation.PlayerSheet.miniTop = it.boundsInWindow().top }
             .padding(horizontal = 8.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(animatedTint)
+            .shadow(12.dp, com.music.spotui.ui.theme.AppShapes.MiniPlayer, clip = false)
+            .clip(com.music.spotui.ui.theme.AppShapes.MiniPlayer)
+            // The cover's colour, deepened a little so white text always reads on it.
+            .background(androidx.compose.ui.graphics.lerp(animatedTint, Color.Black, 0.18f))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(54.dp)
-                .padding(start = 8.dp, end = 12.dp)
+                .height(62.dp)
+                .padding(start = 9.dp, end = 12.dp)
         ) {
             androidx.compose.foundation.pager.HorizontalPager(
                 state = pager,
@@ -295,8 +298,8 @@ fun MiniPlayer(navController: NavHostController) {
                     GlideImage(
                         transition = CrossFade,
                         modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(4.dp)),
+                            .size(44.dp)
+                            .clip(com.music.spotui.ui.theme.AppShapes.Thumb),
                         model = m.cover,
                         contentScale = ContentScale.Crop,
                         failure = placeholder(R.drawable.placeholder),
@@ -306,7 +309,7 @@ fun MiniPlayer(navController: NavHostController) {
                     val remote = SongPlayer.activeDevice.value
                     Column(modifier = Modifier.padding(start = 12.dp, end = 8.dp)) {
                         if (remote == null) {
-                            Text(text = if (adPlaying) stringResource(R.string.ad_playing) else (m.title), color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Text(text = if (adPlaying) stringResource(R.string.ad_playing) else (m.title), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.2).sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                             if (!adPlaying) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                 // The artist yields the width: the output's name stays whole.
                                 Text(
@@ -372,10 +375,15 @@ fun MiniPlayer(navController: NavHostController) {
             Spacer(modifier = Modifier.width(20.dp))
             if (SongPlayer.canLike) com.music.spotui.ui.screens.AddButton(song = { com.music.spotui.ui.screens.nowPlayingSong(vm) }, liked = liked, size = 24.dp) { vm.updateLikeState(true) }
             Spacer(modifier = Modifier.width(20.dp))
+            // A solid white circle, so the main action stands out from the secondary icons.
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(38.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color.White),
+            ) {
             com.music.spotui.ui.components.PlayPauseIcon(
                 playing = songPlayingState,
                 contentDescription = if (songPlayingState) stringResource(R.string.content_description_pause_button) else stringResource(R.string.content_description_play_button),
-                tint = Color.White,
+                tint = Color.Black,
                 modifier = Modifier.pressable(0.96f) {
                         if (songPlayingState) {
                             SongPlayer.pause()
@@ -385,16 +393,19 @@ fun MiniPlayer(navController: NavHostController) {
                             vm.updateSongState(songCoverUri, songTitle, songSinger, true, songId, vm.currentSongIndex.value, vm.currentSongAlbum.value)
                         }
                     }
-                    .size(26.dp)
+                    // The whole circle is the tap target; the glyph sits inside it.
+                    .size(38.dp)
+                    .padding(8.dp)
                     
             )
+            }
         }
         // Thin progress line at the bottom of the card.
         // Drawn every frame from the engine clock: smooth at the display refresh rate.
         androidx.compose.foundation.Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = 12.dp)
                 .height(2.dp)
                 .clip(RoundedCornerShape(1.dp))
                 // Its own layer: a tick re-records these two rectangles, not the whole card.
@@ -445,7 +456,7 @@ fun Snackbar(showMessage : String) {
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
-            .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(AppText),
         contentAlignment = Alignment.Center
     ){

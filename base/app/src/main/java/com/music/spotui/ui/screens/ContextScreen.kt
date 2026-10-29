@@ -721,7 +721,7 @@ private fun ContextContent(navController: NavController, vm: ContextViewModel, p
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.accessibility_navigate_back), tint = AppText)
                 }
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-                    if (p.type == "liked" || p.type == "liked-artist") LikedCover(Modifier.fillMaxWidth(0.66f).aspectRatio(1f).shadow(16.dp, RoundedCornerShape(4.dp))) else
+                    if (p.type == "liked" || p.type == "liked-artist") LikedCover(Modifier.fillMaxWidth(0.66f).aspectRatio(1f).shadow(24.dp, com.music.spotui.ui.theme.AppShapes.Cover)) else
                     GlideImage(
                         transition = CrossFade,
                         model = p.coverUri,
@@ -732,13 +732,13 @@ private fun ContextContent(navController: NavController, vm: ContextViewModel, p
                         modifier = Modifier
                             .fillMaxWidth(0.66f)
                             .aspectRatio(1f)
-                            .shadow(16.dp, RoundedCornerShape(4.dp))
-                            .clip(RoundedCornerShape(4.dp)),
+                            .shadow(24.dp, com.music.spotui.ui.theme.AppShapes.Cover)
+                            .clip(com.music.spotui.ui.theme.AppShapes.Cover),
                     )
                 }
                 Spacer(Modifier.height(20.dp))
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    com.music.spotui.ui.components.FitText(p.name, fontSize = 26.sp, minSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 2)
+                    com.music.spotui.ui.components.FitText(p.name, fontSize = 32.sp, minSize = 20.sp, fontWeight = FontWeight.ExtraBold, maxLines = 2)
                     if (p.description.isNotBlank()) {
                         Spacer(Modifier.height(8.dp))
                         Text(p.description, color = AppText.copy(alpha = 0.7f), fontSize = 14.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
@@ -1106,7 +1106,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.recommendedItems(vm: 
         LaunchedEffect(p.uri) { vm.loadRecs(p) }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(16.dp, 28.dp, 8.dp, 4.dp)) {
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.recommended_songs), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.recommended_songs), color = AppText, style = com.music.spotui.ui.theme.AppType.Section)
                 Text(stringResource(if (p.tracks.isEmpty()) R.string.recommended_songs_from_name else R.string.recommended_songs_from_songs),
                     color = AppMuted, fontSize = 13.sp)
             }
@@ -1142,7 +1142,7 @@ private fun RecommendedRow(song: SongsModel, isCurrent: Boolean, onPlay: () -> U
         modifier = modifier.fillMaxWidth().clickable(onClick = onPlay).padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
     ) {
         GlideImage(model = song.coverUri, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(4.dp)))
+            modifier = Modifier.size(48.dp).clip(com.music.spotui.ui.theme.AppShapes.Thumb))
         Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
             // The song playing is green, as in the playlist above.
             Text(song.title, color = if (isCurrent) SpotifyGreen else AppText, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -1255,7 +1255,7 @@ private fun TrackRow(
                     }
                 }
             }
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 9.dp)
     ) {
         if (showCover) {
             GlideImage(
@@ -1263,15 +1263,17 @@ private fun TrackRow(
                 model = song.coverUri,
                 contentDescription = "",
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(48.dp).clip(com.music.spotui.ui.theme.AppShapes.Thumb),
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 song.title,
                 color = if (isCurrent) SpotifyGreen else AppText,
-                fontSize = 16.sp,
+                fontSize = 15.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.15).sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1284,7 +1286,7 @@ private fun TrackRow(
                     ExplicitBadge()
                     Spacer(Modifier.width(6.dp))
                 }
-                Text(song.singer, color = AppText.copy(alpha = 0.7f), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(song.singer, color = com.music.spotui.ui.theme.AppMuted, fontSize = 13.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         // Collaborative playlist: who added this song.
@@ -1318,7 +1320,7 @@ private fun LikedCover(modifier: Modifier) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
+            .clip(com.music.spotui.ui.theme.AppShapes.Cover)
             .background(Brush.linearGradient(listOf(Color(0xFF450AF5), Color(0xFF8E8EE5), Color(0xFFC4EFD9)))),
     ) {
         Icon(Icons.Default.Favorite, contentDescription = null, tint = AppText, modifier = Modifier.fillMaxWidth(0.4f).aspectRatio(1f))
@@ -1517,7 +1519,7 @@ private fun SimilarAlbums(navController: NavController, firstTrackId: String, al
     }
     if (albums.isEmpty()) return
     Column(Modifier.padding(top = 24.dp)) {
-        Text(stringResource(R.string.more_like_this), color = AppText, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+        Text(stringResource(R.string.more_like_this), color = AppText, style = com.music.spotui.ui.theme.AppType.Section,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         androidx.compose.foundation.lazy.LazyRow(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
@@ -1530,8 +1532,8 @@ private fun SimilarAlbums(navController: NavController, firstTrackId: String, al
                     navController.navigate(com.music.spotui.ui.navigation.albumRoute(a.name, artists, a.uri.substringAfterLast(':')))
                 }) {
                     GlideImage(transition = CrossFade, model = a.images.maxByOrNull { it.width ?: 0 }?.url, contentDescription = null, contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(140.dp).clip(RoundedCornerShape(4.dp)))
-                    Text(a.name, color = AppText, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                        modifier = Modifier.size(140.dp).clip(com.music.spotui.ui.theme.AppShapes.Cover))
+                    Text(a.name, color = AppText, style = com.music.spotui.ui.theme.AppType.ItemTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp))
                     Text(artists, color = AppMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
