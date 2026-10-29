@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Lock
@@ -99,6 +100,8 @@ fun PlaylistOptionsSheet(
     onProfile: (String) -> Unit,
     /** "Add to this playlist" (search and suggestions), on your own playlists. */
     onAddSongs: (() -> Unit)? = null,
+    /** "Transfer to YouTube Music": opens the transfer tool for this album or playlist. */
+    onTransfer: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -167,6 +170,9 @@ fun PlaylistOptionsSheet(
             val share = { SpotifyCode.show(ShareTarget(page.uri, page.name, page.ownerName, page.coverUri)); onDismiss() }
             // Every song of this playlist into another one of yours (Web Player: "Add playlist to other playlist").
             if (page.uri.startsWith("spotify:playlist:")) OptionRow(Icons.Outlined.AddCircleOutline, stringResource(R.string.add_playlist_to_playlist)) { mergingInto = true }
+            onTransfer?.let { open ->
+                OptionRow(Icons.Outlined.SwapHoriz, stringResource(R.string.yt_transfer_menu)) { onDismiss(); open() }
+            }
             if (page.isBlend) {
                 // A Blend is Spotify's: renamed, shared and left through its own service.
                 OptionRow(Icons.Outlined.Edit, stringResource(R.string.blend_rename)) { renamingBlend = true }

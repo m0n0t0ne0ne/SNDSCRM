@@ -597,9 +597,15 @@ private fun ContextContent(navController: NavController, vm: ContextViewModel, p
     )
     if (addingSongs) com.music.spotui.ui.components.AddSongsScreen(p) { added -> addingSongs = false; if (added) vm.reload() }
     if (albumMenu) com.music.spotui.ui.components.AlbumOptionsSheet(p.uri, p.name) { albumMenu = false }
+    var transferring by remember { mutableStateOf(false) }
+    if (transferring) com.music.spotui.ui.transfer.YtMusicTransferDialog(
+        name = p.name, coverUri = p.coverUri, songs = p.tracks, loading = !p.complete,
+        onDismiss = { transferring = false },
+    )
     if (playlistMenu) com.music.spotui.ui.components.PlaylistOptionsSheet(
         page = p,
         onAddSongs = if (p.type == "playlist" && vm.editableContext.value && !p.isBlend) ({ addingSongs = true }) else null,
+        onTransfer = if (p.tracks.isNotEmpty()) ({ transferring = true }) else null,
         onDismiss = { playlistMenu = false },
         onChanged = { vm.reload() },
         onEdited = { name, description -> vm.showDetails(name, description) },
