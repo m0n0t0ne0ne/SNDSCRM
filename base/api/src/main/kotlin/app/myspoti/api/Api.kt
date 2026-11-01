@@ -37,6 +37,8 @@ interface Player {
      */
     suspend fun play(contextUri: Uri, trackUri: Uri? = null, index: Int? = null, positionMs: Long? = null, order: List<Uri>? = null)
     suspend fun pause()
+    /** [pause] after a fade of [fadeMs] (the sleep timer); cancelling it keeps playing. */
+    suspend fun pauseSlowly(fadeMs: Long) = pause()
     suspend fun resume()
     suspend fun seek(positionMs: Long)
     suspend fun next()
@@ -50,6 +52,8 @@ interface Player {
     suspend fun skipTo(item: NowPlaying)
     /** "Play next": before everything already queued. */
     suspend fun playNext(uris: List<Uri>)
+    /** Queues [uris] just before [before], a queued item of [Queue.queued]. */
+    suspend fun insertInQueue(uris: List<Uri>, before: NowPlaying)
     /** Moves [item] just before or after [target], in the same part of the queue. */
     suspend fun moveInQueue(item: NowPlaying, target: NowPlaying, after: Boolean)
 
