@@ -161,7 +161,7 @@
     <string name="recap_top_artists">Top artists</string>
     <string name="recap_top_albums">Top albums</string>
     <string name="recap_private_note">Counts everything played in Myspoti (Spotify, downloads, local files). It stays on this phone and is never sent to Spotify.</string>
-    <string name="recap_detail">Your listening, downloads and local files included</string>
+    <string name="recap_detail">Your listening, local files included</string>
     <string name="track_credits">Credits</string>
     <string name="exclude_taste">Exclude from your taste profile</string>
     <string name="include_taste">Include in your taste profile</string>
@@ -228,7 +228,7 @@
     <string name="smart_shuffle_on">Smart shuffle: Spotify recommendations join the shuffled playlist.</string>
     <string name="track_sort_added">Date added</string>
     <string name="settings_title">Settings</string>
-    <string name="settings_detail">Sound quality, downloads, data, battery and language</string>
+    <string name="settings_detail">Sound quality, data, battery and language</string>
     <string name="settings_section_playback">Playback</string>
     <string name="settings_section_downloads">Downloads</string>
     <string name="settings_section_data">Data and battery</string>

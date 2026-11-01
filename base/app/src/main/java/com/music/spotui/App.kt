@@ -53,7 +53,6 @@ fun App() {
     }
 
     UpdatePrompt()
-    SupportPrompt()
     // The playlists at the top of the library, fetched ahead on Wi-Fi (see PagePrefetch).
     LaunchedEffect(Unit) { com.music.spotui.data.api.PagePrefetch.start() }
 
@@ -280,21 +279,7 @@ private fun SupportDialog(supporter: Boolean, onSupport: () -> Unit, onSponsor: 
 private fun UpdatePrompt() {
     val context = androidx.compose.ui.platform.LocalContext.current
     var release by updateRelease
-    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    androidx.compose.runtime.LaunchedEffect(owner) {
-        // Each time the app comes to the foreground (the check itself skips when the last one is
-        // under an hour old), then every 6 h while it stays open. Turned off in Settings: no
-        // automatic check; the manual one there still asks.
-        owner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
-            while (true) {
-                if (com.music.spotui.data.preferences.AutoUpdateCheckPref.on) {
-                    // The request runs on the IO dispatcher, nothing waits for it.
-                    com.music.spotui.data.api.UpdateChecker.check(context)?.let { release = it }
-                }
-                kotlinx.coroutines.delay(com.music.spotui.data.api.UpdateChecker.PERIODIC_MS)
-            }
-        }
-    }
+    // No automatic check: only the refresh button next to the version in Settings › About asks.
     updateCardOpen.value = release != null
     val r = release ?: return
     com.music.spotui.extensions.ProtectedSurfaceEffect(app.myspoti.extensions.ProtectedSurface.UPDATE)

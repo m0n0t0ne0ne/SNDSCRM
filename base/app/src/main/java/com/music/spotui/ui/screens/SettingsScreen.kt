@@ -109,7 +109,6 @@ fun SettingsScreen(navController: NavController) {
                 checked = com.music.spotui.data.preferences.AutoplayPref.on,
                 onChecked = { com.music.spotui.data.preferences.AutoplayPref.set(ctx, it) },
             )
-            CrossfadeRow()
             var keepPlaying by remember { mutableStateOf(app.myspoti.host.android.PlaybackService.keepsPlayingOnClose(ctx)) }
             OptionRow(
                 label = stringResource(R.string.settings_keep_playing_title),
@@ -211,13 +210,6 @@ fun SettingsScreen(navController: NavController) {
             if (tab == 2) {
             Section(R.string.settings_section_app)
             AboutRow()
-            // A18: the launch check can be turned off; the manual check below keeps working.
-            OptionRow(
-                label = stringResource(R.string.settings_auto_update_title),
-                detail = stringResource(R.string.settings_auto_update_detail),
-                checked = com.music.spotui.data.preferences.AutoUpdateCheckPref.on,
-                onChecked = { com.music.spotui.data.preferences.AutoUpdateCheckPref.set(ctx, it) },
-            )
             // The hidden Web Player stuck or crashed: rebuild it without leaving the app.
             Column(
                 Modifier.fillMaxWidth().clickable {

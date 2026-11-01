@@ -115,17 +115,14 @@ fun setLibraryGridView(c: Context, v: Boolean) = prefs(c).edit().putBoolean(KEY_
  */
 object CrossfadePref {
     const val MAX = 12
-    var seconds by androidx.compose.runtime.mutableStateOf(
-        prefs(com.music.spotui.di.Graph.app).getInt(KEY_CROSSFADE, 0).coerceIn(0, MAX),
-    )
+    /** Crossfade was removed: always off, a length saved before is ignored. */
+    var seconds by androidx.compose.runtime.mutableStateOf(0)
         private set
 
-    /** Saves it and hands it to the player: the change applies to the song playing now. */
+    @Suppress("UNUSED_PARAMETER")
     fun set(c: Context, value: Int) {
-        val v = value.coerceIn(0, MAX)
-        seconds = v
-        prefs(c).edit().putInt(KEY_CROSSFADE, v).apply()
-        applyCrossfade(v)
+        seconds = 0
+        applyCrossfade(0)
     }
 }
 
@@ -145,8 +142,8 @@ object MusicVideoPref {
     }
 }
 
-fun getCrossfadeSeconds(c: Context): Int =
-    prefs(c).getInt(KEY_CROSSFADE, 0).coerceIn(0, CrossfadePref.MAX)
+@Suppress("UNUSED_PARAMETER")
+fun getCrossfadeSeconds(c: Context): Int = 0
 
 /** Gives the saved length to the player (at start, and at every change); 0 stops a fade at once. */
 fun applyCrossfade(seconds: Int) {
