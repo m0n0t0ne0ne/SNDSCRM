@@ -109,8 +109,6 @@ import com.music.spotui.ui.look.SweptLine
 import com.music.spotui.ui.look.SweptLyricLine
 import com.music.spotui.ui.look.UNSUNG_ALPHA
 import com.music.spotui.ui.look.rememberReduceMotion
-import com.music.spotui.ui.look.lastPress
-import com.music.spotui.ui.look.tapTime
 import com.music.spotui.ui.look.toSwept
 import com.music.spotui.ui.viewmodel.LyricsViewModel
 import kotlinx.coroutines.delay
@@ -531,10 +529,6 @@ private fun PanelRow(
     val staggerDelay = behind.coerceIn(0, STAGGER_STEPS) * STAGGER_FRACTION * run.durationMs
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    // Where the finger went down and how wide the row was: a tap plays from the word it hit.
-    var pressAt by remember { mutableStateOf(Offset.Zero) }
-    var pressWidth by remember { mutableStateOf(0) }
-    val density = LocalDensity.current
     val scale by animateFloatAsState(
         targetValue = when {
             pressed -> PRESSED_SCALE
@@ -586,17 +580,10 @@ private fun PanelRow(
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(0.1f, 5.dp.toPx())),
             )
         } else Modifier)
-        .lastPress { at, size -> pressAt = at; pressWidth = size.width }
         .combinedClickable(
             enabled = synced || onHold != null, interactionSource = interaction, indication = null,
             onLongClick = onHold,
-            onClick = {
-                if (synced) {
-                    val room = with(density) { GLOW_ROOM.roundToPx() }
-                    val laid = measureNoteLine(noteMeasurer, row.text, lineStyle, pressWidth, room)
-                    onSeek(tapTime(row.swept, laid, pressAt - Offset(room.toFloat(), room.toFloat())))
-                }
-            },
+            onClick = { if (synced) onSeek(row.timeMs) },
         )
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {

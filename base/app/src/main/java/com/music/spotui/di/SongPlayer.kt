@@ -15,8 +15,6 @@ import app.myspoti.host.android.MyspotiRuntime
 import app.myspoti.host.android.NowPlayingInfo
 import app.myspoti.host.android.PlaybackService
 import com.music.spotui.data.entity.SongsModel
-import com.music.spotui.data.local.LocalFileMatch.isDeviceFile
-import com.music.spotui.data.local.LocalFileMatch.isUnmatchedLocal
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -2249,9 +2247,7 @@ object SongPlayer {
     }
 
     private suspend fun fadeLocalOut(ms: Long) {
-        val cast = com.music.spotui.cast.CastPlayback.active
-        val base = if (cast) com.music.spotui.cast.CastPlayback.volume.floatValue else 1f
-        fun set(gain: Float) = if (cast) com.music.spotui.cast.CastPlayback.setVolume(base * gain) else LocalPlayer.setGain(gain)
+        fun set(gain: Float) = LocalPlayer.setGain(gain)
         val startedAt = SystemClock.elapsedRealtime()
         try {
             while (true) {
@@ -2259,7 +2255,7 @@ object SongPlayer {
                 val t = ((SystemClock.elapsedRealtime() - startedAt).toFloat() / ms).coerceIn(0f, 1f)
                 if (t >= 1f) break
                 set(Math.pow(10.0, -2.0 * t).toFloat())   // 1 down to -40 dB
-                kotlinx.coroutines.delay(if (cast) 1_000L else 250L)
+                kotlinx.coroutines.delay(250L)
             }
             _sleepEndsAt.value = null
             pauseSilently()
@@ -2364,15 +2360,11 @@ object SongPlayer {
         Haptics.confirm()
         scope.launch {
             val local = LocalPlayer.active.value
-            val rows = songs.filter { it.playable && !it.isUnmatchedLocal }
-            val files = if (local && rows.any { it.isDeviceFile })
-                runCatching { com.music.spotui.data.local.LocalMusic.tracks(Graph.app) }.getOrDefault(emptyList()).associateBy { com.music.spotui.data.local.LocalFileMatch.key(it) }
-            else emptyMap()
+            val rows = songs.filter { it.playable }
             val toLocal = ArrayList<com.music.spotui.data.local.LocalTrack>()
             val toSpotify = ArrayList<String>()
             for (s in rows) {
                 val uri = when {
-                    s.isDeviceFile -> { if (local) files[s.url]?.let { toLocal += it }; continue }
                     s.url.startsWith("episode:") -> "spotify:episode:" + s.url.removePrefix("episode:")
                     s.spotifyTrackId.isNotBlank() -> SPOTIFY_TRACK_PREFIX + s.spotifyTrackId
                     else -> continue
