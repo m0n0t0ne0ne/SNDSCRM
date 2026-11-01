@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- One SoundScream mark in Spotify green, whatever accent colour is picked. -->
+    <drawable name="ic_launcher_foreground_blue">@drawable/ic_launcher_foreground</drawable>
+    <drawable name="ic_launcher_foreground_orange">@drawable/ic_launcher_foreground</drawable>
+    <drawable name="ic_launcher_foreground_pink">@drawable/ic_launcher_foreground</drawable>
+    <drawable name="ic_launcher_foreground_purple">@drawable/ic_launcher_foreground</drawable>
+</resources>

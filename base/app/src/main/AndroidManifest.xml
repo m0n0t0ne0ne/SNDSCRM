@@ -77,6 +77,7 @@
 
         <activity
             android:name="app.myspoti.MainActivity"
+            android:label="${launcherLabel}"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="unspecified"

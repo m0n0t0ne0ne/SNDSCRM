@@ -27,7 +27,9 @@ android {
     val beta = findProperty("appVersionName") == null || version.contains("-beta")
     defaultConfig {
         applicationId = if (beta) "app.myspoti" else "app.myspoti.stable"
-        manifestPlaceholders["appLabel"] = if (beta) "Myspoti Beta" else "Myspoti"
+        manifestPlaceholders["appLabel"] = if (beta) "SoundScream Beta" else "SoundScream"
+        // The short name under the home-screen icon.
+        manifestPlaceholders["launcherLabel"] = "SNDSCR"
         // The adb command line (com.music.spotui.cli): betas and debug builds only.
         manifestPlaceholders["cliEnabled"] = beta.toString()
         minSdk = 29
@@ -79,7 +81,7 @@ android {
         debug {
             // Installs next to the release apps (own data, own sign-in).
             applicationIdSuffix = ".dev"
-            manifestPlaceholders["appLabel"] = "Myspoti dev"
+            manifestPlaceholders["appLabel"] = "SoundScream"
             manifestPlaceholders["cliEnabled"] = "true"
         }
         release {
@@ -90,7 +92,7 @@ android {
             // beta on the test phone without replacing the signed beta installed there.
             if (findProperty("overDev") != null) {
                 applicationIdSuffix = ".dev"
-                manifestPlaceholders["appLabel"] = "Myspoti dev"
+                manifestPlaceholders["appLabel"] = "SoundScream"
             }
             isMinifyEnabled = true
             isShrinkResources = true
