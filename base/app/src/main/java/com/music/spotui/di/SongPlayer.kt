@@ -585,7 +585,7 @@ object SongPlayer {
         // Repeat once on a Spotify song: the page's repeat-track loops for good. The page seen
         // starting the song again is its one replay: repeat goes off there, and that replay ends
         // into the next song. Another song under repeat-track (a skip, a pick) cancels it.
-        if (item != null && s.repeat == Repeat.TRACK && _repeatMode.value == LocalRepeat.ONE) {
+        if (item != null && s.repeat == Repeat.TRACK && _repeatMode.value == LocalRepeat.ONCE) {
             if (LocalRepeat.pageRestarted(!trackChanged, predicted, lengthBefore, reported)) {
                 app.myspoti.host.android.Logbook.log("repeat once: ${item.name} replayed, back to off")
                 setRepeatMode(LocalRepeat.OFF)
@@ -634,7 +634,8 @@ object SongPlayer {
         val repeatHeld = SystemClock.elapsedRealtime() < repeatWantedUntil
         if (repeatHeld && s.repeat.ordinal == repeatWanted) repeatWantedUntil = 0L
         if (!LocalPlayer.active.value && (!repeatHeld || s.repeat.ordinal == repeatWanted)) {
-            _repeatMode.value = s.repeat.ordinal
+            // Repeat once is the page's repeat-track too: the page reporting it does not turn once into for good.
+            if (!(s.repeat == Repeat.TRACK && _repeatMode.value == LocalRepeat.ONCE)) _repeatMode.value = s.repeat.ordinal
             state.repeat.value = s.repeat != Repeat.OFF
         }
         if (item == null) {
@@ -1639,10 +1640,13 @@ object SongPlayer {
     // before it took the tap flipped the button back, and the two screens then disagreed; the
     // value asked for holds until the page reports it (or for SHUFFLE_HOLD_MS).
     @Volatile private var shuffleWanted = false
+    /** The repeat mode last tapped, held against the page's older reports like [shuffleWanted]. */
+    @Volatile private var repeatWanted = 0
+    @Volatile private var repeatWantedUntil = 0L
     @Volatile private var shuffleWantedUntil = 0L
     private const val SHUFFLE_HOLD_MS = 2_500L
 
-    /** 0 = off, 1 = context, 2 = track. */
+    /** 0 = off, 1 = context, 2 = track for good, 3 = track once (see [LocalRepeat]). */
     private val _repeatMode = mutableStateOf(0)
     val repeatMode: State<Int> get() = _repeatMode
 
@@ -1652,40 +1656,38 @@ object SongPlayer {
         if (LocalPlayer.active.value) { _repeatMode.value = mode; boundState?.repeat?.value = mode != 0; LocalPlayer.setRepeatMode(mode); return }
         Haptics.toggle(mode != 0)
         _repeatMode.value = mode
+        repeatWanted = LocalRepeat.pageMode(mode)
+        repeatWantedUntil = SystemClock.elapsedRealtime() + SHUFFLE_HOLD_MS
         boundState?.repeat?.value = mode != 0
-        lastTrackPrefs().edit().putInt("repeat", mode.coerceIn(0, 2)).apply()
-        command { api.player.setRepeat(Repeat.entries[mode.coerceIn(0, 2)]) }
+        lastTrackPrefs().edit().putInt("repeat", mode.coerceIn(0, 3)).apply()
+        command { api.player.setRepeat(Repeat.entries[LocalRepeat.pageMode(mode)]) }
     }
 
     /**
      * Reported: the repeat button forgets what it was. The mode is the user's choice, kept from
      * one run of the app to the next (the page always starts with repeat off): shown at once and
      * set again on the first song the page reports.
-    /** The repeat mode last tapped, held against the page's older reports like [shuffleWanted]. */
-    @Volatile private var repeatWanted = 0
-    @Volatile private var repeatWantedUntil = 0L
      */
     private fun restoreRepeat(state: CurrentSongState) {
         val p = lastTrackPrefs()
         if (!p.contains("repeat")) return
-        val mode = p.getInt("repeat", 0).coerceIn(0, 2)
+        val mode = p.getInt("repeat", 0).coerceIn(0, 3)
         _repeatMode.value = mode
         state.repeat.value = mode != 0
-        MyspotiRuntime.spotify.player.restoreRepeat(Repeat.entries[mode])
+        MyspotiRuntime.spotify.player.restoreRepeat(Repeat.entries[LocalRepeat.pageMode(mode)])
     }
 
-    fun cycleRepeat() = setRepeatMode((_repeatMode.value + 1) % 3)
+    /** Off, the queue, the song for good, the song once, off. */
+    fun cycleRepeat() = setRepeatMode((_repeatMode.value + 1) % 4)
 
     /** A manual move on a Spotify song cancels repeat once: it was for the song left. */
     private fun cancelRepeatOnce(why: String) {
-        if (_repeatMode.value != LocalRepeat.ONE) return
+        if (_repeatMode.value != LocalRepeat.ONCE) return
         app.myspoti.host.android.Logbook.log("repeat once: cancelled ($why), back to off")
         setRepeatMode(LocalRepeat.OFF)
     }
 
     /** Podcast playback speed (Spotify refuses it on music). */
-        repeatWanted = mode
-        repeatWantedUntil = SystemClock.elapsedRealtime() + SHUFFLE_HOLD_MS
     fun setSpeed(speed: Double) {
         _speed.value = speed
         command { api.player.setSpeed(speed) }

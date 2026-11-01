@@ -1357,8 +1357,9 @@ fun PlayerFull(
                 Color.White
             },
             // The official loop with one arrow (drawn here: the old drawable was the two-arrow one).
-            imageVector = if (SongPlayer.repeatMode.value == 2) PlayerIcons.repeatOne else PlayerIcons.repeat,
-            contentDescription = when (SongPlayer.repeatMode.value) { 1 -> stringResource(R.string.repeat_on); 2 -> stringResource(R.string.repeat_one); else -> stringResource(R.string.repeat_off) })
+            // Repeat once has the same loop with "1×" in it.
+            imageVector = when (SongPlayer.repeatMode.value) { 2 -> PlayerIcons.repeatOne; 3 -> com.music.spotui.ui.components.RepeatIcons.once; else -> PlayerIcons.repeat },
+            contentDescription = when (SongPlayer.repeatMode.value) { 1 -> stringResource(R.string.repeat_on); 2 -> stringResource(R.string.repeat_one); 3 -> stringResource(R.string.repeat_once); else -> stringResource(R.string.repeat_off) })
     }
 }
 

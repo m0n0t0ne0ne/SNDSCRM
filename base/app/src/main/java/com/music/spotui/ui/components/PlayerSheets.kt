@@ -528,7 +528,7 @@ fun QueueSheet(contextName: String, onDismiss: () -> Unit) {
                     SongPlayer.setShuffle(!shuffle); state.shuffle.value = !shuffle
                 }
                 val mode = SongPlayer.repeatMode.value
-                QueueAction(if (mode == 2) Icons.Default.RepeatOne else Icons.Default.Repeat, stringResource(R.string.np_content_desc_repeat), mode != 0, Modifier.weight(1f)) {
+                QueueAction(when (mode) { 2 -> Icons.Default.RepeatOne; 3 -> RepeatIcons.once; else -> Icons.Default.Repeat }, stringResource(R.string.np_content_desc_repeat), mode != 0, Modifier.weight(1f)) {
                     SongPlayer.cycleRepeat()
                 }
                 QueueAction(Icons.Outlined.Timer, stringResource(R.string.np_content_desc_sleep_timer), SongPlayer.sleepEndsAt.value != null, Modifier.weight(1f)) {
