@@ -22,7 +22,7 @@ android {
     // signed with the first key, as "Myspoti Beta"; releases are "app.myspoti.stable",
     // signed with their own key, as "Myspoti".
     // Local builds (no version given) are on the beta side, like the phone test builds.
-    val version = (findProperty("appVersionName") as String?) ?: "2.1.0"
+    val version = (findProperty("appVersionName") as String?) ?: "2.4.0-soundscream"
     // "-beta" as in UpdateChecker.isBeta, one predicate for the app id, the label and the log stripping.
     val beta = findProperty("appVersionName") == null || version.contains("-beta")
     defaultConfig {
@@ -31,11 +31,11 @@ android {
         // The short name under the home-screen icon.
         manifestPlaceholders["launcherLabel"] = "SNDSCR"
         // The adb command line (com.music.spotui.cli): betas and debug builds only.
-        manifestPlaceholders["cliEnabled"] = beta.toString()
+        manifestPlaceholders["cliEnabled"] = "false"
         minSdk = 29
         targetSdk = 36
         // CI release builds pass the tag's version (-PappVersionName / -PappVersionCode).
-        versionCode = (findProperty("appVersionCode") as String?)?.toIntOrNull() ?: 200
+        versionCode = (findProperty("appVersionCode") as String?)?.toIntOrNull() ?: 201
         versionName = version
         // GitHub "owner/repo" whose releases the app checks for updates; empty = off
         // (local builds). CI sets it to the repository it builds.
@@ -145,7 +145,6 @@ dependencies {
     implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
     implementation("androidx.palette:palette-ktx:1.0.0")
     // Frosted (blurred) bars of the Immersive look. Apache-2.0.
-    implementation("dev.chrisbanes.haze:haze:1.3.1")
     // MediaTransferReceiver: lets the system output switcher transfer to our Connect routes
     implementation("androidx.mediarouter:mediarouter:1.8.1")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")

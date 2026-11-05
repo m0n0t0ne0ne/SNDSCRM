@@ -151,7 +151,6 @@ fun SettingsScreen(navController: NavController) {
                     onChecked = { com.music.spotui.data.preferences.ConnectMirrorPref.set(ctx, it) },
                 )
             Divider()
-            SourcesBlock(app.myspoti.extensions.Action.AUDIO_SOURCE, navController)
 
             Section(R.string.settings_section_data)
             OptionRow(
@@ -249,43 +248,6 @@ fun SettingsScreen(navController: NavController) {
     }
 }
 
-/**
- * The installed extensions that declare settings (manifest `settings`), each one opening its page,
- * where they are edited. Nothing when none has any.
- */
-@Composable
-private fun ExtensionSettingsRows(navController: NavController) {
-    val registry by com.music.spotui.extensions.Extensions.registry.collectAsStateWithLifecycle()
-    val withSettings = registry.extensions.mapNotNull { e ->
-        com.music.spotui.extensions.Extensions.manifest(e.id)?.settings?.takeIf { it.isNotEmpty() }?.let { e to it }
-    }
-    if (withSettings.isEmpty()) return
-    Section(R.string.extensions_title)
-    withSettings.forEach { (e, settings) ->
-        Column(
-            Modifier.fillMaxWidth().clickable { navController.navigate(installedRoute(e.id)) }
-                .padding(horizontal = 20.dp, vertical = 10.dp),
-        ) {
-            Text(e.name, color = AppText, fontSize = 16.sp)
-            Text(settings.joinToString { it.label }, color = AppMuted, fontSize = 12.sp, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-        }
-    }
-    Divider()
-}
-
-/** The order a source action asks extensions in ([SourceOrderList]); nothing without any such extension. */
-@Composable
-private fun SourcesBlock(action: app.myspoti.extensions.Action, navController: NavController) {
-    val registry by com.music.spotui.extensions.Extensions.registry.collectAsStateWithLifecycle()
-    val audio = action == app.myspoti.extensions.Action.AUDIO_SOURCE
-    if (remember(registry) { com.music.spotui.extensions.Extensions.sources(action).isEmpty() }) return
-    Section(if (audio) R.string.sources_audio_title else R.string.sources_download_title)
-    SourceOrderList(action, spotifyLast = audio, look = SourceLook.Classic, onOpen = { navController.navigate(installedRoute(it)) })
-    Text(stringResource(if (audio) R.string.sources_audio_footer else R.string.sources_download_footer), color = AppMuted, fontSize = 12.sp,
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
-    if (audio) Divider()
-}
-
 @Composable
 private fun Section(title: Int) {
     Text(stringResource(title).uppercase(), color = com.music.spotui.ui.theme.AppAccent, fontSize = 12.sp, fontWeight = FontWeight.Bold,
@@ -294,32 +256,6 @@ private fun Section(title: Int) {
 
 @Composable
 private fun Divider() = HorizontalDivider(color = tone(0xFF2A2A2A), modifier = Modifier.padding(top = 8.dp))
-
-/** Classic or Immersive: the choice made in the onboarding, changeable here. */
-@Composable
-private fun LookRow() {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    val current = com.music.spotui.data.preferences.LookPref.look
-    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
-        Text(stringResource(R.string.settings_look_title), color = AppText, fontSize = 16.sp)
-        for (l in com.music.spotui.data.preferences.Look.entries) {
-            val classic = l == com.music.spotui.data.preferences.Look.CLASSIC
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-                    .semantics { role = Role.RadioButton }
-                    .clickable { com.music.spotui.data.preferences.LookPref.set(ctx, l) }
-                    .padding(vertical = 8.dp),
-            ) {
-                androidx.compose.material3.RadioButton(selected = current == l, onClick = null)
-                Column(Modifier.padding(start = 12.dp)) {
-                    Text(stringResource(if (classic) R.string.look_classic else R.string.look_immersive), color = AppText, fontSize = 15.sp)
-                    Text(stringResource(if (classic) R.string.look_classic_detail else R.string.look_immersive_detail), color = AppMuted, fontSize = 12.sp)
-                }
-            }
-        }
-    }
-}
 
 /** The accent colour of one look, for everyone (the same palette the supporter sheet uses). */
 @Composable
@@ -343,42 +279,6 @@ private fun AccentRow(look: com.music.spotui.data.preferences.Look) {
                         .clip(CircleShape).background(a.color)
                         .then(if (selected) Modifier.border(3.dp, AppText, CircleShape) else Modifier)
                         .clickable { com.music.spotui.data.api.SupportReminder.setAccent(ctx, look, a) },
-                )
-            }
-        }
-    }
-}
-
-/**
- * "Crossfade": the length of the fade at the end of a song. The label says what it is: the two
- * songs never overlap (the page plays one media element), so this is a fade, not a true
- * crossfade. The default is 0: off, as before.
- */
-@Composable
-private fun CrossfadeRow() {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    val pref = com.music.spotui.data.preferences.CrossfadePref
-    androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp)) {
-        Text(stringResource(R.string.settings_crossfade_title), color = AppText, fontSize = 16.sp)
-        Text(
-            stringResource(R.string.settings_crossfade_detail),
-            color = AppMuted, fontSize = 12.sp,
-            modifier = Modifier.padding(top = 2.dp),
-        )
-        Row(
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 10.dp),
-        ) {
-            for (v in listOf(0, 3, 6, 9, 12)) {
-                val selected = pref.seconds == v
-                Text(
-                    if (v == 0) stringResource(R.string.settings_crossfade_off)
-                    else stringResource(R.string.settings_crossfade_seconds, v),
-                    color = if (selected) Color.Black else AppText, fontSize = 14.sp,
-                    modifier = Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                        .background(if (selected) com.music.spotui.ui.theme.AppAccent else tone(0xFF2A2A2A))
-                        .clickable { pref.set(ctx, v) }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
         }
@@ -513,44 +413,14 @@ private fun OptionRow(label: String, detail: String, checked: Boolean,
     }
 }
 
-/**
- * The installed version with a refresh button: it asks GitHub right now (no cache), shows the
- * answer and the time of the last check. A newer release opens the update card on tap.
- */
+/** The installed version. */
 @Composable
 private fun AboutRow() {
-    val ctx = androidx.compose.ui.platform.LocalContext.current
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    val check = com.music.spotui.data.api.rememberUpdateCheckState(ctx)
-    // Also what "Later" put aside: the card in the app offers it again from here.
-    val live = com.music.spotui.updateRelease.value
-    val known = live ?: remember { com.music.spotui.data.api.UpdateChecker.known(ctx) }
-    Row(
-        Modifier.fillMaxWidth()
-            .then(if (known != null) Modifier.clickable { com.music.spotui.updateRelease.value = known } else Modifier)
-            .padding(start = 20.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.settings_about_version, app.myspoti.engine.BuildConfig.VERSION_NAME), color = AppText, fontSize = 16.sp)
-            if (known != null) {
-                Text(stringResource(R.string.settings_update_available, known.version), color = com.music.spotui.ui.theme.AppAccent, fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 2.dp))
-                Text(stringResource(R.string.settings_update_available_detail), color = AppMuted, fontSize = 12.sp)
-            }
-            check.message?.takeIf { known == null || check.isError }?.let {
-                Text(it, color = if (check.isError) androidx.compose.material3.MaterialTheme.colorScheme.error else AppText, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp))
-            }
-            Text(check.lastCheckedText, color = AppMuted, fontSize = 12.sp)
-        }
-        if (check.checking) {
-            androidx.compose.material3.CircularProgressIndicator(Modifier.padding(12.dp).size(24.dp), strokeWidth = 2.dp, color = AppMuted)
-        } else {
-            androidx.compose.material3.IconButton(onClick = { scope.launch { check.run() } }) {
-                androidx.compose.material3.Icon(Icons.Default.Refresh, stringResource(R.string.settings_update_refresh), tint = AppMuted)
-            }
-        }
-    }
+    Text(
+        stringResource(R.string.settings_about_version, app.myspoti.engine.BuildConfig.VERSION_NAME),
+        color = AppText,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+    )
 }
 
 /**

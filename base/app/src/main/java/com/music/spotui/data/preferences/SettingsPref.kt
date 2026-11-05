@@ -81,22 +81,6 @@ object ConnectMirrorPref {
     }
 }
 
-/**
- * The automatic update check at launch (on by default: the app behaved that way before this
- * option existed). Off means no check when the app starts — a check asked for in Settings still
- * works, it reads the same release list.
- */
-object AutoUpdateCheckPref {
-    private const val KEY = "auto_update_check"
-    var on by androidx.compose.runtime.mutableStateOf(prefs(com.music.spotui.di.Graph.app).getBoolean(KEY, true))
-        private set
-
-    fun set(c: Context, value: Boolean) {
-        on = value
-        prefs(c).edit().putBoolean(KEY, value).apply()
-    }
-}
-
 /** Screen rotation: portrait (the default), automatic (follows the system), or landscape. */
 object OrientationPref {
     private const val KEY = "screen_orientation"
@@ -175,19 +159,3 @@ fun getLyricTranslateLang(c: Context): String =
 fun setLyricTranslateLang(c: Context, code: String) =
     prefs(c).edit().putString(KEY_LYRIC_TRANSLATE_LANG, code.trim()).apply()
 
-/**
- * Liquid Glass in the Immersive look (Settings > Display, under Look): the floating bars refract
- * the page through a lens instead of only frosting it. On by default; it only takes effect on
- * Android 12+ and when the phone does not ask for less blur or motion (see
- * [com.music.spotui.ui.immersive.shell.rememberLiquidGlassActive]).
- */
-object LiquidGlassPref {
-    private const val KEY = "immersive_liquid_glass"
-    var on by androidx.compose.runtime.mutableStateOf(prefs(com.music.spotui.di.Graph.app).getBoolean(KEY, true))
-        private set
-
-    fun set(c: Context, value: Boolean) {
-        on = value
-        prefs(c).edit().putBoolean(KEY, value).apply()
-    }
-}

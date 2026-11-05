@@ -145,7 +145,6 @@ object Extensions {
             _registry.value.extensions.filter { it.enabled }.forEach { start(it, probe = false) }
             started.complete(Unit)
             probeAll()
-            ExtensionUpdates.daily()
         }
         watchTracks()
         watchPlayback()

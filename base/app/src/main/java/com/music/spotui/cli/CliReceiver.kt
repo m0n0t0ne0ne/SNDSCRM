@@ -69,7 +69,7 @@ class CliReceiver : BroadcastReceiver() {
                 put("version", app.myspoti.engine.BuildConfig.VERSION_NAME)
                 put("versionCode", app.myspoti.engine.BuildConfig.VERSION_CODE)
                 put("debug", app.myspoti.engine.BuildConfig.DEBUG)
-                put("beta", com.music.spotui.data.api.UpdateChecker.isBeta)
+                put("beta", false)
                 put("signedIn", ctx.getSharedPreferences("myspoti_prefs", Context.MODE_PRIVATE).getBoolean("LoggedIn", false))
                 put("playing", SongPlayer.isPlaying())
                 put("uri", np.uri)
@@ -211,7 +211,7 @@ class CliReceiver : BroadcastReceiver() {
         const val TAG = "MyspotiCli"
 
         /** Debug and beta builds; the manifest leaves the receiver off in the others too. */
-        val enabled: Boolean get() = app.myspoti.engine.BuildConfig.DEBUG || com.music.spotui.data.api.UpdateChecker.isBeta
+        val enabled: Boolean get() = app.myspoti.engine.BuildConfig.DEBUG
 
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
