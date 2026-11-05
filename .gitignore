@@ -20,3 +20,9 @@ docs/RESTE-A-FAIRE.md
 tools/handoff_state.sh
 REDDIT-*.md
 tools/qa-results/
+
+# signing keys are never published
+*.keystore
+*.jks
+*.keystore.b64
+keystore.properties
