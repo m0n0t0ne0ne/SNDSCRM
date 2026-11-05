@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -250,11 +251,21 @@ fun MiniPlayer(navController: NavHostController) {
     // Swipe the track info left/right to change track: [previous, current, next].
     val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = 1, pageCount = { 3 })
     LaunchedEffect(songId) { if (pager.currentPage != 1) pager.scrollToPage(1) }
+    val playingId by androidx.compose.runtime.rememberUpdatedState(songId)
     LaunchedEffect(pager) {
         androidx.compose.runtime.snapshotFlow { pager.settledPage }.collect { page ->
+            if (page == 1) return@collect
+            val swipedFrom = playingId
             when (page) {
                 2 -> SongPlayer.swipeNext()
-                0 -> SongPlayer.previous()
+                0 -> SongPlayer.swipePrevious()
+            }
+            // Reported: after a swipe back the card showed the song before while the same song
+            // kept playing (Spotify restarted it, or an ad was due). The song did not change, so
+            // nothing brought the card back: it now returns to the song that plays.
+            launch {
+                kotlinx.coroutines.delay(SWIPE_SETTLE_MS)
+                if (pager.settledPage != 1 && playingId == swipedFrom) pager.animateScrollToPage(1)
             }
         }
     }
@@ -472,3 +483,6 @@ fun Snackbar(showMessage : String) {
 
 /** What the mini player shows of a song: the crossfade's key, so the old one fades with its own text. */
 private data class MiniSong(val title: String, val singer: String, val cover: String)
+
+/** How long a swipe waits for the song to change before the card goes back to the one playing. */
+internal const val SWIPE_SETTLE_MS = 3_000L

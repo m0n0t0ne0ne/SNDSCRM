@@ -1533,10 +1533,20 @@ object SongPlayer {
         return "shuffle=${api.player.state.value?.shuffle} next=[$up]"
     }
 
-    fun previous(by: String = "user") {
+    /**
+     * A swipe back on the mini player or the cover: always the song before, never a restart of
+     * this one. The Previous button restarts a song past its first seconds (Spotify's rule); a
+     * swipe already shows the song before, so it must go there.
+     */
+    fun swipePrevious() = previous(by = "swipe", alwaysStep = true)
+
+    fun previous(by: String = "user", alwaysStep: Boolean = false) {
         app.myspoti.host.android.Logbook.log("previous asked by $by")
         Haptics.click()
-        if (LocalPlayer.active.value) { LocalPlayer.previous(); return }
+        if (LocalPlayer.active.value) { if (alwaysStep) LocalPlayer.previousItem() else LocalPlayer.previous(); return }
+        // Spotify's skipToPrevious restarts a song that has played more than ~3 s: a swipe puts it
+        // back at 0:00 first, so the same command then steps back a song.
+        val restartFirst = alwaysStep && getCurrentPosition() > SWIPE_RESTART_GUARD_MS
         cancelRepeatOnce("previous")
         if (getCurrentPosition() <= 3_000) com.music.spotui.extensions.Extensions.skipAsked("backward")
         intendPlaying()
@@ -1563,8 +1573,19 @@ object SongPlayer {
         // position stays until Spotify reports, and a quick second previous would restart again.
         positionMs = 0L
         positionAt = SystemClock.elapsedRealtime()
-        transport(waitReady = !stateSeen, checkAfter = true) { api.player.previous() }
+        transport(waitReady = !stateSeen, checkAfter = true) {
+            if (restartFirst) {
+                api.player.seek(0)
+                // The page applies the seek before it takes the next command.
+                kotlinx.coroutines.delay(SWIPE_SEEK_SETTLE_MS)
+            }
+            api.player.previous()
+        }
     }
+
+    /** Past this, Spotify's previous would restart the song: a swipe goes to 0:00 first. */
+    private const val SWIPE_RESTART_GUARD_MS = 2_500L
+    private const val SWIPE_SEEK_SETTLE_MS = 250L
 
     /** Tracks shufflePlay plays without a context: the first one, plus up to 49 queued. */
     private const val SHUFFLE_QUEUE_MAX = 50

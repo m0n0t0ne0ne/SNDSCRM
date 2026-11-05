@@ -271,6 +271,7 @@ fun PlayerScreen(navController: NavController) {
             if (it is androidx.compose.foundation.interaction.DragInteraction.Start) artworkSwiped = true
         }
     }
+    val playingId by androidx.compose.runtime.rememberUpdatedState(songId)
     LaunchedEffect(artworkPagerState) {
         snapshotFlow { artworkPagerState.settledPage }
             .distinctUntilChanged()
@@ -278,9 +279,15 @@ fun PlayerScreen(navController: NavController) {
                 if (page == 1) return@collect
                 if (!artworkSwiped) { artworkPagerState.scrollToPage(1); return@collect }
                 artworkSwiped = false
+                val swipedFrom = playingId
                 when (page) {
                     2 -> SongPlayer.swipeNext()
-                    0 -> SongPlayer.previous()
+                    0 -> SongPlayer.swipePrevious()
+                }
+                // The song did not change (a restart, an ad due): the cover goes back to the one playing.
+                launch {
+                    kotlinx.coroutines.delay(com.music.spotui.ui.components.SWIPE_SETTLE_MS)
+                    if (artworkPagerState.settledPage != 1 && playingId == swipedFrom) artworkPagerState.animateScrollToPage(1)
                 }
             }
     }
