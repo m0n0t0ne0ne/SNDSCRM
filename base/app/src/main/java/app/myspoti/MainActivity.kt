@@ -44,6 +44,21 @@ private const val SESSION_WAIT_MS = 6_000L
 /** The most a returning page may take to get its bridge ready before the wait gives up anyway. */
 private const val SESSION_LOAD_MAX_MS = 60_000L
 
+/** What one token check says of the session. */
+internal enum class SessionCheck { SIGNED_IN, SIGNED_OUT, UNKNOWN }
+
+/**
+ * Reads one [MyspotiRuntime.isSignedIn] answer. Only an answer signs out: an anonymous token, or a
+ * Spotify sign-in page open. A check that failed (a bridge error, a token.get left waiting its 20 s,
+ * a page offline) says nothing of the session. Taken for "anonymous", it signed the user out with
+ * no network and sent them to a sign-in page that could not load either: the reported relogin loop.
+ */
+internal fun sessionCheck(answer: Result<Boolean>): SessionCheck = answer.fold(
+    onSuccess = { if (it) SessionCheck.SIGNED_IN else SessionCheck.SIGNED_OUT },
+    // The activity going away is not a failed check: the collect must end there.
+    onFailure = { if (it is kotlinx.coroutines.CancellationException) throw it else SessionCheck.UNKNOWN },
+)
+
 /**
  * The app's only screen host: the Compose UI, with the Web Player page attached behind it.
  * The page comes to the front only to sign in, on Spotify's own login pages.
@@ -186,7 +201,7 @@ class MainActivity : AppCompatActivity() {
         // The process-wide WebView lives in this activity's root while attached:
         // detach it, or view.parent -> root keeps the destroyed activity (and its
         // whole view tree) alive for the rest of the playback session.
-        MyspotiRuntime.host.detach()
+        MyspotiRuntime.host.detach(root)
         super.onDestroy()
     }
 
@@ -299,8 +314,12 @@ class MainActivity : AppCompatActivity() {
                 when {
                     login && !showingLogin && signedIn -> showLogin()
                     ready && !login -> {
-                        val user = runCatching { MyspotiRuntime.isSignedIn() }.getOrDefault(false)
-                        if (user) {
+                        val answer = runCatching { MyspotiRuntime.isSignedIn() }
+                        val check = sessionCheck(answer)
+                        // The session is kept as it is: the next page load asks again.
+                        if (check == SessionCheck.UNKNOWN) {
+                            app.myspoti.host.android.Logbook.log("session check failed (${answer.exceptionOrNull()?.message}): session kept")
+                        } else if (check == SessionCheck.SIGNED_IN) {
                             if (com.music.spotui.di.SessionActions.signedOut.value) {
                                 // Signed in again after a logout, maybe as someone else: start the
                                 // screens over (a new activity also drops their view models).
