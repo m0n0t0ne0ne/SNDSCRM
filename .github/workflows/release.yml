@@ -1,0 +1,86 @@
+# Publishes a release when release/VERSION changes on main.
+# If that tag already exists, this only builds and checks the APK, and publishes nothing.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: [release/VERSION]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      CERT_SHA256: d220452574a7d478478b2e346fee12276483feee2d5e817e3fbecd546257f426
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Read the version
+        id: version
+        run: |
+          tag=$(tr -d '[:space:]' < release/VERSION)
+          if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-soundscream\.[0-9]+$ ]]; then
+            echo "::error::release/VERSION is not a valid version: $tag"; exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Release $tag already exists: build check only."
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install the signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.SOUNDSCREAM_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::The SOUNDSCREAM_KEYSTORE_B64 secret is missing"; exit 1
+          fi
+          mkdir -p ~/.android
+          printf '%s' "$KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: "platforms;android-37.0 build-tools;37.0.0"
+
+      - name: Link the platform that compileSdk 37 looks for
+        run: ln -sfn android-37.0 "$ANDROID_HOME/platforms/android-37"
+
+      - name: Build
+        run: scripts/build-apk.sh
+
+      - name: Check the package and signature
+        run: |
+          apk=base/app/build/outputs/apk/release/app-release.apk
+          tools="$ANDROID_HOME/build-tools/37.0.0"
+          "$tools/aapt2" dump badging "$apk" | grep -q "^package: name='app.myspoti.dev'"
+          "$tools/apksigner" verify --print-certs "$apk" | grep -q "SHA-256 digest: $CERT_SHA256"
+          cp "$apk" SoundScream.apk
+          sha256sum SoundScream.apk
+
+      - name: Publish
+        if: steps.version.outputs.publish == 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          sha=$(sha256sum SoundScream.apk | cut -d' ' -f1)
+          { cat release/NOTES.md; printf '\nAPK SHA-256: `%s`\n' "$sha"; } > notes.txt
+          gh release create "$TAG" SoundScream.apk --target "$GITHUB_SHA" --title "SoundScream ${TAG#v}" --notes-file notes.txt
