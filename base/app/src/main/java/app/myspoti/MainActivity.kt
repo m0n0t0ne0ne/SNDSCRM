@@ -103,6 +103,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        app.myspoti.host.android.PlaybackService.opened(this)
         // The user's rotation choice (portrait by default); changes are applied from the UI below.
         requestedOrientation = com.music.spotui.data.preferences.OrientationPref.requested()
         signedIn = prefs.getBoolean("LoggedIn", false)

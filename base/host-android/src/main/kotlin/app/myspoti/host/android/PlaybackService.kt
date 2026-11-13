@@ -138,7 +138,8 @@ class PlaybackService : MediaBrowserServiceCompat() {
                 .setActions(ACTIONS)
                 .setState(PlaybackStateCompat.STATE_PAUSED, 0L, 0f)
                 .build())
-            isActive = true
+            // Closed from the recent apps: the session stays out of the widgets until the app is used.
+            isActive = !closedByUser(this@PlaybackService)
         }
         sessionToken = session.sessionToken
         createChannel()
@@ -187,15 +188,30 @@ class PlaybackService : MediaBrowserServiceCompat() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         // An ad or a song loading counts as playing: closing the app then stopped the service under it.
         if (current?.makesSound == true && !playingRemote && !keepsPlayingOnClose(this)) {
+            setClosedByUser(this, true)
             controls?.pause()
-            handler.postDelayed({
-                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
-                foreground = false
-                stopSelf()
-            }, CLOSE_STOP_MS)
+            handler.postDelayed({ leaveOnClose() }, CLOSE_STOP_MS)
             return
         }
-        if (current?.makesSound != true) stopSelf()
+        if (current?.makesSound != true) {
+            setClosedByUser(this, true)
+            leaveOnClose()
+        }
+    }
+
+    /**
+     * Gone with the app: no notification, and an inactive session, so the media widgets and the
+     * system's media controls drop the last song. A widget or the system binding the service again
+     * starts the app's process, which restores the last song: it stays out of the session until
+     * the app is opened or something plays ([closedByUser]).
+     */
+    private fun leaveOnClose() {
+        handler.removeCallbacks(leaveForeground)
+        holdLocks(false)
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        foreground = false
+        session.isActive = false
+        stopSelf()
     }
 
     /** A Spotify Connect device plays (the session's volume is that device's). */
@@ -572,6 +588,8 @@ class PlaybackService : MediaBrowserServiceCompat() {
         // for the "recent" root, whose only item is what played last. Without it a reconnected car has
         // nothing to restart (#142).
         if (rootHints?.getBoolean(BrowserRoot.EXTRA_RECENT) == true) {
+            // Closed from the recent apps: no resume card for the song left behind.
+            if (closedByUser(this)) return null
             return BrowserRoot(RECENT_ROOT_ID, Bundle().apply { putBoolean(BrowserRoot.EXTRA_RECENT, true) })
         }
         return BrowserRoot(ROOT_ID, Bundle().apply {
@@ -652,6 +670,23 @@ class PlaybackService : MediaBrowserServiceCompat() {
 
         fun setKeepsPlayingOnClose(context: Context, on: Boolean) =
             context.getSharedPreferences(CLOSE_PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEEP_PLAYING_KEY, on).apply()
+
+        private const val CLOSED_KEY = "closed_by_user"
+
+        /** The app was closed from the recent apps and nothing has played or opened it since. */
+        fun closedByUser(context: Context): Boolean =
+            context.getSharedPreferences(CLOSE_PREFS, Context.MODE_PRIVATE).getBoolean(CLOSED_KEY, false)
+
+        private fun setClosedByUser(context: Context, on: Boolean) {
+            if (closedByUser(context) == on) return
+            context.getSharedPreferences(CLOSE_PREFS, Context.MODE_PRIVATE).edit().putBoolean(CLOSED_KEY, on).apply()
+        }
+
+        /** The app's screen opened: the session shows the last song again. */
+        fun opened(context: Context) {
+            setClosedByUser(context, false)
+            instance?.session?.isActive = true
+        }
 
         private const val SKIP_KEY = "headset_skips_on_episodes"
 
@@ -734,6 +769,13 @@ class PlaybackService : MediaBrowserServiceCompat() {
         fun update(context: Context, info: NowPlayingInfo) {
             val before = current
             current = info
+            // Closed from the recent apps: a paused song (the one restored when a widget started the
+            // process) stays out; one that plays (a headset, the car) brings the session back.
+            if (closedByUser(context)) {
+                if (!info.makesSound) return
+                setClosedByUser(context, false)
+                instance?.session?.isActive = true
+            }
             val svc = instance
             if (svc == null) {
                 // Loading counts: Android gives the audio only to a player in the foreground, and a
