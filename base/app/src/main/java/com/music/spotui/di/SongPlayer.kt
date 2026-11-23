@@ -1419,12 +1419,15 @@ object SongPlayer {
         // player stuck until reloaded), and each song skipped through asks for a licence.
         val now = SystemClock.elapsedRealtime()
         val sinceSent = now - skipSentAt
-        if (now - burstAt > SKIP_BURST_MS && sinceSent >= MIN_SKIP_GAP_MS) {
+        // The gap grows with the skips sent lately (SkipPacing): fewer licences asked of Spotify.
+        val gap = skipPacing.gap(now)
+        if (now - burstAt > SKIP_BURST_MS && sinceSent >= gap) {
             burstAt = now
             burstUpcoming = apiQueue?.let { it.queued + it.nextUp }.orEmpty()
             burstTaps = 1
             pendingSkips = 0
             skipSentAt = now
+            skipPacing.sent(now)
             // The next song starts at 0: a previous tapped before Spotify reports must not read
             // the old song's position and restart instead of going back.
             positionMs = 0L
@@ -1458,7 +1461,7 @@ object SongPlayer {
         pendingSkips++
         showSkipTarget()
         main.removeCallbacks(sendSkips)
-        main.postDelayed(sendSkips, maxOf(SKIP_BURST_MS, MIN_SKIP_GAP_MS - sinceSent))
+        main.postDelayed(sendSkips, maxOf(SKIP_BURST_MS, gap - sinceSent))
     }
 
     /** Hands out the tokens of [showSkipTarget]; 0 is never one. */
@@ -1515,6 +1518,8 @@ object SongPlayer {
 
     /** When the last skip command left (see [next]). */
     private var skipSentAt = 0L
+    /** How far apart skips go out, by how many went out lately. */
+    private val skipPacing = SkipPacing()
 
     /** When the last "next" tap came, the queue as it was at the first one, and the taps since. */
     private var burstAt = 0L
@@ -1525,6 +1530,8 @@ object SongPlayer {
         if (pendingSkips <= 0) return@Runnable
         pendingSkips = 0
         skipSentAt = SystemClock.elapsedRealtime()
+        skipPacing.sent(skipSentAt)
+        if (skipPacing.gap(skipSentAt) > MIN_SKIP_GAP_MS) app.myspoti.host.android.Logbook.log("skips paced: the next one waits ${skipPacing.gap(skipSentAt) / 1000} s (Spotify limits quick skips)")
         // The song [burstTaps] after the one playing at the first tap.
         val target = burstUpcoming.getOrNull(burstTaps - 1)
         app.myspoti.host.android.Logbook.log("next taps merged: $burstTaps skips${if (target != null) " in one jump to ${target.name}" else ", sent as a plain next"}")

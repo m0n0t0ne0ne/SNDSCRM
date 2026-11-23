@@ -1400,7 +1400,7 @@ class SpotifyPlayer(private val bridge: Bridge, private val scope: CoroutineScop
             target != null && fromAutoplay -> playNow(target, origin = "play on")
             ctx != null && target != null -> playNow(ctx, trackUri = target, order = station ?: lastOrder?.takeIf { it.first == ctx }?.second,
                 keepsOrder = station == null, origin = "play on")
-            target != null -> next()
+            target != null -> nextNow()
             // Nothing after it: a song is started again (the page's own end-of-context behaviour);
             // an episode is left finished rather than replayed from the start. Not a song autoplay
             // brought or a station's: its list would start over (#135), the page goes on itself.
@@ -1933,6 +1933,34 @@ class SpotifyPlayer(private val bridge: Bridge, private val scope: CoroutineScop
     override suspend fun play(contextUri: Uri, trackUri: Uri?, index: Int?, positionMs: Long?, order: List<Uri>?) {
         userPlays()
         playAsked(contextUri, trackUri, index, positionMs, order, origin = if (mirroring) "mirror" else "user")
+        watchLanding("pick") { playAsked(contextUri, trackUri, index, positionMs, order, origin = "pick asked again on a new page") }
+    }
+
+    /** A [watchLanding] replay is under way: its own command is not watched again. */
+    @Volatile private var landingReplay = false
+    private var landingWatch: kotlinx.coroutines.Job? = null
+
+    /**
+     * SoundScream: a page that takes the user's command and then does nothing with it. After a
+     * network drop (DNS gone for a minute, the page's token provider failing), the page answered
+     * every play "ok" yet sent nothing to Spotify and told no new state: the tapped song showed,
+     * then the screen went back to the song before. The page is otherwise silent, so the stall
+     * watcher saw a paused song and nothing to repair. A command that brings no state at all within
+     * [LANDING_WATCH_MS] loads the page again, and the command is sent once more to the new page.
+     */
+    private fun watchLanding(what: String, replay: suspend () -> Unit) {
+        if (landingReplay) return
+        val seq = stateSeq
+        landingWatch?.cancel()
+        landingWatch = scope.launch {
+            delay(LANDING_WATCH_MS)
+            if (stateSeq != seq || reloadHost == null || reloadUnderWay || ownReload || mirroring || remoteActive ||
+                _adPlaying.value || repairsHeld() || !bridge.ready.value) return@launch
+            bridge.logger?.invoke("$what: the page took it but told nothing in ${LANDING_WATCH_MS / 1000} s: loading it again")
+            if (!reloadPage()) return@launch
+            landingReplay = true
+            try { runCatching { replay() } } finally { landingReplay = false }
+        }
     }
 
     /** [play], from the user or from a pick of theirs played again here; [origin] for the log. */
@@ -2191,6 +2219,11 @@ class SpotifyPlayer(private val bridge: Bridge, private val scope: CoroutineScop
     }
     override suspend fun seek(positionMs: Long) { endCrossfade(restore = true); command("player.seek", buildJsonObject { put("positionMs", positionMs) }) }
     override suspend fun next() {
+        nextNow()
+        watchLanding("next") { nextNow() }
+    }
+
+    private suspend fun nextNow() {
         pausedByUser = false
         pickBeforeAd = null
         pickAfterReload = null
@@ -2249,6 +2282,11 @@ class SpotifyPlayer(private val bridge: Bridge, private val scope: CoroutineScop
     }
 
     override suspend fun previous() {
+        previousNow()
+        watchLanding("previous") { previousNow() }
+    }
+
+    private suspend fun previousNow() {
         pausedByUser = false
         pickBeforeAd = null
         pickAfterReload = null
@@ -2408,6 +2446,11 @@ class SpotifyPlayer(private val bridge: Bridge, private val scope: CoroutineScop
     private fun lastWithSong(): PlayerState? = lastTrackState?.takeIf { it.item != null } ?: lastSong
 
     override suspend fun skipTo(item: NowPlaying) {
+        skipToNow(item)
+        watchLanding("skipTo") { skipToNow(item) }
+    }
+
+    private suspend fun skipToNow(item: NowPlaying) {
         pausedByUser = false
         userMoveAt = System.currentTimeMillis()
         userPlays()
@@ -2649,6 +2692,8 @@ class SpotifyPlayer(private val bridge: Bridge, private val scope: CoroutineScop
         /** After an ad break, a pause nobody asked for is undone once the page's state has settled this long. */
         const val AD_END_SETTLE_MS = 1_200L
         const val PICK_REPLAY_MS = 120_000L
+        /** How long a user command may go without any state from the page ([watchLanding]). */
+        const val LANDING_WATCH_MS = 6_000L
         /** How long a resume waits for a page that went silent while paused before loading it again. */
         const val RESUME_PING_MS = 1_500L
         /** A resumed song rises from silence to its level in this long, along the ear's curve. */
