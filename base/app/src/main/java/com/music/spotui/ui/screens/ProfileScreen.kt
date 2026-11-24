@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -150,7 +151,8 @@ fun ProfileScreen(navController: NavController, userId: String, userName: String
         }
         item {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                com.music.spotui.ui.components.ProfileAvatar(
+                if (me) MyProfilePhoto(p, userName, onChanged = { attempt++ })
+                else com.music.spotui.ui.components.ProfileAvatar(
                     url = spotifyImageUrl(p?.images?.best(300)?.url),
                     name = p?.name ?: userName, size = 150.dp,
                 )
@@ -247,6 +249,87 @@ fun ProfileScreen(navController: NavController, userId: String, userName: String
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * SoundScream: your own picture, with a menu to change or remove it (the Web Player's "Edit
+ * profile"). The photo comes from Android's photo picker, which needs no permission.
+ */
+@Composable
+private fun MyProfilePhoto(p: UserProfile?, userName: String, onChanged: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    var menu by remember { mutableStateOf(false) }
+    var busy by remember { mutableStateOf(false) }
+    val hasPhoto = !p?.images.isNullOrEmpty()
+    fun toast(res: Int) = android.widget.Toast.makeText(context, res, android.widget.Toast.LENGTH_SHORT).show()
+    fun apply(image: ByteArray?) {
+        busy = true
+        scope.launch {
+            runCatching { MyspotiRuntime.api.users.setProfileImage(image) }
+                .onSuccess {
+                    onChanged()
+                    // The picture in the top bar follows.
+                    runCatching { MyspotiRuntime.api.users.me() }.getOrNull()?.let {
+                        com.music.spotui.data.api.ProfileCache.pictureChanged(it.images.best(160)?.url)
+                    }
+                }
+                .onFailure {
+                    app.myspoti.host.android.Logbook.log("profile picture not changed: ${it.message?.take(120)}")
+                    toast(R.string.profile_photo_failed)
+                }
+            busy = false
+        }
+    }
+    val picker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia(),
+    ) { picked ->
+        if (picked == null) return@rememberLauncherForActivityResult
+        busy = true
+        scope.launch {
+            val prepared = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching { com.music.spotui.ui.components.ProfilePhoto.prepare(context, picked) }
+                    .getOrDefault(com.music.spotui.ui.components.ProfilePhoto.Result.Unreadable)
+            }
+            busy = false
+            when (prepared) {
+                is com.music.spotui.ui.components.ProfilePhoto.Result.Ready -> apply(prepared.jpeg)
+                com.music.spotui.ui.components.ProfilePhoto.Result.TooSmall -> toast(R.string.profile_photo_too_small)
+                com.music.spotui.ui.components.ProfilePhoto.Result.Unreadable -> toast(R.string.profile_photo_failed)
+            }
+        }
+    }
+    Box(contentAlignment = Alignment.Center) {
+        com.music.spotui.ui.components.ProfileAvatar(
+            url = spotifyImageUrl(p?.images?.best(300)?.url),
+            name = p?.name ?: userName, size = 150.dp,
+            modifier = Modifier.pressable(0.97f) { if (!busy) menu = true },
+        )
+        if (busy) Box(Modifier.size(150.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = AppText, strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
+        }
+        // A small pencil on the picture: it can be tapped.
+        if (!busy) Box(
+            Modifier.align(Alignment.BottomEnd).size(36.dp).clip(CircleShape).background(tone(0xFF282828)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Default.Edit, stringResource(R.string.profile_photo_change), tint = AppText, modifier = Modifier.size(18.dp))
+        }
+        androidx.compose.material3.DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = tone(0xFF282828)) {
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(stringResource(R.string.profile_photo_change), color = AppText) },
+                onClick = {
+                    menu = false
+                    picker.launch(androidx.activity.result.PickVisualMediaRequest(
+                        androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+            )
+            if (hasPhoto) androidx.compose.material3.DropdownMenuItem(
+                text = { Text(stringResource(R.string.profile_photo_remove), color = AppDestructive) },
+                onClick = { menu = false; apply(null) },
+            )
         }
     }
 }

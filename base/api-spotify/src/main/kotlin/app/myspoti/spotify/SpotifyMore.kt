@@ -239,6 +239,28 @@ class SpotifyPodcasts(private val gql: Gql, private val bridge: Bridge, private 
 }
 
 class SpotifyUsers(private val gql: Gql, private val bridge: Bridge, private val http: SpotifyHttp) : Users {
+    /**
+     * SoundScream. The Web Player's own steps (xpui-routes-profile): the image goes to the upload
+     * service, which answers a token; the token is then set as the account's picture on the
+     * identity service. Removing is a DELETE on the same address without a token.
+     */
+    override suspend fun setProfileImage(image: ByteArray?, mimeType: String) {
+        val username = bridge.service("UserAPI", "getUser").str("username") ?: throw GqlException("profile image", "no user")
+        val at = "https://spclient.wg.spotify.com/identity/v3/profile-image/" + java.net.URLEncoder.encode(username, "UTF-8").replace("+", "%20")
+        if (image == null) {
+            val r = http.sendRaw("DELETE", at, null, emptyMap())
+            if (r.status !in 200..299) throw app.myspoti.spotify.gql.HttpException(r.status, r.body.take(200))
+            return
+        }
+        val up = http.sendRaw("POST", "https://image-upload.spotify.com/v4/user-profile", image, mapOf("content-type" to mimeType))
+        if (up.status !in 200..299) throw app.myspoti.spotify.gql.HttpException(up.status, up.body.take(200))
+        val token = (Bridge.json.parseToJsonElement(up.body) as? kotlinx.serialization.json.JsonObject)?.get("uploadToken")
+            ?.let { (it as? JsonPrimitive)?.content }?.takeIf { it.isNotBlank() }
+            ?: throw GqlException("profile image", "no upload token")
+        val set = http.sendRaw("POST", "$at/${java.net.URLEncoder.encode(token, "UTF-8")}", null, emptyMap())
+        if (set.status !in 200..299) throw app.myspoti.spotify.gql.HttpException(set.status, set.body.take(200))
+    }
+
     internal companion object {
         val BUDDYLIST_HOSTS = listOf("guc-spclient.spotify.com", "spclient.wg.spotify.com")
         const val LISTENING_FEED_URL = "https://spclient.wg.spotify.com/listening-activity/v1/feed"

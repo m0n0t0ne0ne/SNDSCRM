@@ -30,6 +30,9 @@ object ProfileCache {
         id = null
     }
 
+    /** SoundScream: the account's picture changed (Edit profile): the one shown follows. */
+    fun pictureChanged(url: String?) { imageUrl = url }
+
     fun ensure(context: Context) {
         if (name != null) return
         if (!fetching.compareAndSet(false, true)) return

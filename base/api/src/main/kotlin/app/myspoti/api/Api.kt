@@ -278,6 +278,13 @@ interface Users {
     /** Contexts played lately (Recents). */
     suspend fun history(): List<HistoryEntry>
     suspend fun setPrivateSession(on: Boolean)
+    /**
+     * SoundScream: the signed-in account's profile picture, as the Web Player's "Edit profile" sets
+     * it. [image] is a JPEG or PNG of at least 300 × 300 pixels, under 10 MB; null removes the picture.
+     */
+    suspend fun setProfileImage(image: ByteArray?, mimeType: String = "image/jpeg") {
+        throw UnsupportedOperationException("profile pictures cannot be changed here")
+    }
 }
 
 interface TrackExtras {

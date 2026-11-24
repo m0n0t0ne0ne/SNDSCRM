@@ -1,4 +1,4 @@
-- **Music that won't start after a Wi-Fi drop:** when Spotify's hidden player breaks after your connection drops, SoundScream now checks whether the song you asked for is actually playing. If it isn't within 6 seconds, it reloads the player and plays it. This covers picking a song, Next, Previous, skipping to a song in the queue, and Play after a pause. Pausing cancels the check, and it leaves ads alone.
+- **Change your profile picture:** on your own profile, tap your picture (it has a pencil) and choose **Change photo** or **Remove photo**. Android's photo picker opens without SoundScream needing access to all your photos. The photo is cropped to a centred square and must be at least 300 × 300 pixels.
 
 **Install:** download `SoundScream.apk` and install it over your current copy. It's built for arm64 phones.
 

@@ -567,4 +567,8 @@
     <string name="settings_connect_mirror_detail">Plays the Spotify song muted in the background, so it counts and your devices can control it. Uses a little more data and battery: turn it off if you don\'t need it.</string>
     <string name="explicit_badge">E</string>
     <string name="spotify_plan">Spotify %1$s</string>
+    <string name="profile_photo_change">Change photo</string>
+    <string name="profile_photo_remove">Remove photo</string>
+    <string name="profile_photo_failed">Couldn\'t change your photo. Try again.</string>
+    <string name="profile_photo_too_small">Choose a photo at least 300 × 300 pixels</string>
 </resources>
