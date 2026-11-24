@@ -108,4 +108,35 @@ class LandingWatchTest {
         delay(SpotifyPlayer.LANDING_WATCH_MS + 1_000)
         assertEquals(0, reloads)
     }
+
+    @Test fun `a page that keeps telling empty states is loaded again too`() = runBlocking {
+        host.post("""{"type":"ready"}""")
+        var reloads = 0
+        player.reloadHost = {
+            reloads++
+            bridge.pageGone()
+            host.post("""{"type":"ready"}""")
+        }
+        player.play("spotify:playlist:C", trackUri = "spotify:track:B")
+        // A broken page: states, but never the song asked for.
+        repeat(8) { host.post("""{"type":"state","state":null}"""); delay(500) }
+        waitFor("reloaded", ms = SpotifyPlayer.LANDING_WATCH_MS + 6_000) { reloads == 1 }
+    }
+
+    @Test fun `a resume the page does not play is played again on a new page`() = runBlocking {
+        host.post("""{"type":"ready"}""")
+        host.post(state(track("A"), paused = true))
+        var reloads = 0
+        player.reloadHost = {
+            reloads++
+            bridge.pageGone()
+            host.post("""{"type":"ready"}""")
+            host.post(state(track("A"), paused = true))
+        }
+        waitFor("song known") { player.state.value?.item != null }
+        val before = called("player.resume")
+        scope.launch { runCatching { player.resume() } }
+        waitFor("reloaded", ms = SpotifyPlayer.LANDING_WATCH_MS + 6_000) { reloads == 1 }
+        waitFor("resumed again", ms = 6_000) { called("player.resume") >= before + 2 }
+    }
 }
