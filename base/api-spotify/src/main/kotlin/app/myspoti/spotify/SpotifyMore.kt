@@ -245,7 +245,9 @@ class SpotifyUsers(private val gql: Gql, private val bridge: Bridge, private val
      * identity service. Removing is a DELETE on the same address without a token.
      */
     override suspend fun setProfileImage(image: ByteArray?, mimeType: String) {
-        val username = bridge.service("UserAPI", "getUser").str("username") ?: throw GqlException("profile image", "no user")
+        // The account's own query, not the page's UserAPI.getUser: that one never answered on the
+        // owner's phone (timeout after 20 s, 25/11) and the picture was never sent.
+        val username = ownUsername().takeIf { it.isNotBlank() } ?: throw GqlException("profile image", "no user")
         val at = "https://spclient.wg.spotify.com/identity/v3/profile-image/" + java.net.URLEncoder.encode(username, "UTF-8").replace("+", "%20")
         if (image == null) {
             val r = http.sendRaw("DELETE", at, null, emptyMap())
