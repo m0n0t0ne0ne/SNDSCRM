@@ -1,10 +1,6 @@
 # SoundScream
 
-SoundScream (SNDSCR on the home screen) is a personal, restyled build of
-[Myspoti](https://github.com/kota-zo/myspoti) by kota-zo for Android. It plays Spotify through
-Spotify's own web player and draws its own screens on top. A Spotify account is required.
 
-It is based on Myspoti 2.1.0, with the playback engine and selected playback fixes from Myspoti 2.4.0.
 
 ## Changes from Myspoti
 
