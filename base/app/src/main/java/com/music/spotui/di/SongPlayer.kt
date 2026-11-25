@@ -648,6 +648,11 @@ object SongPlayer {
             app.myspoti.host.android.Logbook.log("autoplay off: paused at ${item.name} (${if (pastSingleSong) "after a song played alone" else "autoplay item"})")
             if (!s.isPaused) pauseSilently()
         }
+        // The song Spotify's own picks would follow (a song played alone, or the last one before its
+        // autoplay): with autoplay off it is stopped just before its end, on itself ([lastSongWatch]).
+        lastBeforeAutoplay = item != null && uri.startsWith(SPOTIFY_TRACK_PREFIX) && s.repeat == Repeat.OFF &&
+            (ctx == uri || s.next?.provider == "autoplay")
+        if (lastBeforeAutoplay && playing) { main.removeCallbacks(lastSongWatch); main.post(lastSongWatch) }
         currentContextUri = s.contextUri.orEmpty()
         if (item != null) { checkEndOfTrackTimer(id); currentTrackId = id }
         _nowPlaying.value = NowPlaying(
@@ -2420,6 +2425,31 @@ object SongPlayer {
                 sleepTrackId = null
                 _sleepEndsAt.value = null
                 pauseSilently()
+                return
+            }
+            main.postDelayed(this, 250)
+        }
+    }
+
+    /** The song playing is the last before Spotify's own picks (see [applyState]). */
+    @Volatile private var lastBeforeAutoplay = false
+
+    /**
+     * Autoplay off: the last song before Spotify's picks is paused just before its end and put
+     * back at its start, so the player stays on it (as Spotify's own apps do) instead of moving
+     * on to a song only to pause it there (reported: a paused stranger with a blank cover). The
+     * pause after the fact in [applyState] stays for a song that slipped past this watch.
+     */
+    private val lastSongWatch = object : Runnable {
+        override fun run() {
+            if (!lastBeforeAutoplay || LocalPlayer.active.value || !isPlaying()) return
+            val duration = getDuration()
+            if (duration > 0 && getCurrentPosition() >= duration - END_OF_TRACK_MARGIN_MS &&
+                !com.music.spotui.data.preferences.AutoplayPref.on) {
+                lastBeforeAutoplay = false
+                app.myspoti.host.android.Logbook.log("autoplay off: stopped at the end of the song, back to its start")
+                pauseSilently()
+                seekTo(0)
                 return
             }
             main.postDelayed(this, 250)
