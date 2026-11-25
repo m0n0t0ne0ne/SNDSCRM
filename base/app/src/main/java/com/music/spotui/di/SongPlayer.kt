@@ -36,6 +36,8 @@ import java.util.concurrent.ConcurrentHashMap
 object SongPlayer {
     private const val SPOTIFY_TRACK_PREFIX = "spotify:track:"
     private const val PENDING_MS = 6000L
+    /** A song left this close to its end ended by itself (not a skip): see the autoplay check. */
+    private const val AUTOPLAY_END_MARGIN_MS = 4_000L
     /** The longest a song is shown loading while the extensions are asked (they answer sooner). */
     private const val ROUTE_HOLD_MS = 40_000L
     /** The end-of-track timer pauses this close to the end (before the next item starts). */
@@ -632,9 +634,18 @@ object SongPlayer {
         // Tracks only: this is the music setting (similar songs). An episode the page rolls on
         // to after the previous one belongs to the show, not to that recommendation autoplay —
         // pausing it there is how a podcast "stopped by itself" (B11).
-        if (item != null && item.provider == "autoplay" && uri.startsWith(SPOTIFY_TRACK_PREFIX) &&
+        // A song played on its own (its context is that song) goes on with Spotify's picks without
+        // marking them "autoplay": the next song comes "in" the first one's context. Counted as
+        // autoplay only when the song ended by itself, so Next still skips (seen 25/11, SoundScream).
+        val ctx = s.contextUri.orEmpty()
+        val endedNaturally = lengthBefore > 0 && predicted >= lengthBefore - AUTOPLAY_END_MARGIN_MS
+        val pastSingleSong = trackChanged && endedNaturally && ctx.startsWith(SPOTIFY_TRACK_PREFIX) && uri != ctx
+        if (item != null && trackChanged)
+            app.myspoti.host.android.Logbook.log("next song: provider=${item.provider ?: "-"} context=${ctx.substringBeforeLast(':')} ended=$endedNaturally autoplay=${com.music.spotui.data.preferences.AutoplayPref.on}")
+        if (item != null && (item.provider == "autoplay" || pastSingleSong) && uri.startsWith(SPOTIFY_TRACK_PREFIX) &&
             uri != autoplayHandledUri && !com.music.spotui.data.preferences.AutoplayPref.on) {
             autoplayHandledUri = uri
+            app.myspoti.host.android.Logbook.log("autoplay off: paused at ${item.name} (${if (pastSingleSong) "after a song played alone" else "autoplay item"})")
             if (!s.isPaused) pauseSilently()
         }
         currentContextUri = s.contextUri.orEmpty()
