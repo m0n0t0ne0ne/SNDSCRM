@@ -656,7 +656,7 @@ internal class ControlRelay(private val view: WebView, private val fingerprint: 
          * The decoding interceptor: Chrome's list when zstd's native decoder loads, else the same
          * list without zstd (an answer that could not be read is worse than a shorter list).
          */
-        private val DECODING: CompressionInterceptor by lazy {
+        internal val DECODING: CompressionInterceptor by lazy {
             val zstd = runCatching {
                 okio.Buffer().write(ZSTD_PROBE).let { Zstd.decompress(it) }.let { okio.Buffer().apply { writeAll(it) } }.readUtf8() == "ok"
             }.getOrElse { e -> Logbook.log("relay: zstd decoder unavailable (${e.javaClass.simpleName}): Accept-Encoding without zstd"); false }

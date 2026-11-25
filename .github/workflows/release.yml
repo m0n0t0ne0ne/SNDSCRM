@@ -76,6 +76,14 @@ jobs:
           cp "$apk" SoundScream.apk
           sha256sum SoundScream.apk
 
+      - name: Keep the APK of a test build
+        if: steps.version.outputs.publish != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoundScream-apk
+          path: SoundScream.apk
+          retention-days: 7
+
       - name: Publish
         if: steps.version.outputs.publish == 'true'
         env:

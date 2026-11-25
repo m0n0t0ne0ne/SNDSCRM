@@ -189,6 +189,16 @@ class WebPlayerHost(private val context: Context) : BridgeHost {
     }
 
     private lateinit var relay: ControlRelay
+    private lateinit var loginRelay: LoginRelay
+
+    /** The sign-in page's channel and fetch wrapper, for WebViews without document-start scripts. */
+    private fun armLogin(view: WebView, renew: Boolean) {
+        loginRelay.channel?.let { channel ->
+            if (renew) channel.newPage()
+            view.evaluateJavascript(channel.shim(), null)
+        }
+        loginRelay.injectNow()
+    }
 
     /** The guarded fallback channel of the bridge's messages, when the WebView has no web message listener. */
     private var hostChannel: PlayerChannel? = null
@@ -285,6 +295,8 @@ class WebPlayerHost(private val context: Context) : BridgeHost {
             it.onDeviceRegistered = { drmAsked = true; main.removeCallbacks(drmWatch) }
             it.install()
         }
+        // The sign-in's requests leave from the app too, without that header (see LoginRelay).
+        loginRelay = LoginRelay(this, fingerprint, ::cookies).also { it.install() }
         val webView = this
         cookies().apply {
             setAcceptCookie(true)
@@ -344,6 +356,7 @@ class WebPlayerHost(private val context: Context) : BridgeHost {
                     loginSteps++
                     Logbook.log("login step #$loginSteps ${request.method} ${url.substringAfter("accounts.spotify.com").substringBefore('?').take(90)}")
                 }
+                loginRelay.intercept(request)?.let { return it }
                 // The music itself: fetched here, so the WebView's own package-name header never
                 // travels with it (see MediaProxy).
                 if (media.handles(url)) {
@@ -375,6 +388,7 @@ class WebPlayerHost(private val context: Context) : BridgeHost {
                 _url.value = url
                 _loginRequired.value = isLoginPage(url)
                 if (url.startsWith(PLAYER_URL)) { drmAsked = false; licenseAnswersLogged = 0; onPageStarting?.invoke(); armChannels(view, renew = true); relay.injectNow() }
+                if (LoginRelay.isLoginHost(url)) armLogin(view, renew = true)
                 if (PLAYER_ROOT.matches(url) && url != roots.getString(ROOT_KEY, null)) roots.edit().putString(ROOT_KEY, url).apply()
             }
 
@@ -433,6 +447,7 @@ class WebPlayerHost(private val context: Context) : BridgeHost {
                     main.removeCallbacks(loginProbe)
                     main.postDelayed(loginProbe, LoginLoad.FIRST_PROBE_MS)
                 }
+                if (LoginRelay.isLoginHost(url)) armLogin(view, renew = false)
                 if (url.startsWith(PLAYER_URL)) {
                     // Again, same secret: the page start's call may have run before the new document existed.
                     armChannels(view, renew = false)
