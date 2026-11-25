@@ -234,8 +234,8 @@ internal class LoginRelay(
         val set = headers.values("Set-Cookie")
         if (set.isEmpty()) return
         val jar = cookies()
-        set.forEach { runCatching { jar.setCookie(url, it) } }
-        jar.flush()
+        set.forEach { c -> runCatching { jar.setCookie(url, c) }.onFailure { Logbook.log("login relay: cookie not kept: ${it.message}") } }
+        runCatching { jar.flush() }
         Logbook.log("login relay: ${set.size} cookie(s) kept from ${shortPath(url)}: " +
             set.joinToString(",") { it.substringBefore('=').take(24) })
     }

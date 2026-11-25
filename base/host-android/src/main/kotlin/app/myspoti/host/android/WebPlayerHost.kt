@@ -296,7 +296,10 @@ class WebPlayerHost(private val context: Context) : BridgeHost {
             it.install()
         }
         // The sign-in's requests leave from the app too, without that header (see LoginRelay).
-        loginRelay = LoginRelay(this, fingerprint, ::cookies).also { it.install() }
+        // The jar is looked up here, on the main thread: the profile store refuses any other thread
+        // (a crash at the first sign-in request, read from OkHttp's). A profile switch builds a new view.
+        val jar = cookies()
+        loginRelay = LoginRelay(this, fingerprint) { jar }.also { it.install() }
         val webView = this
         cookies().apply {
             setAcceptCookie(true)
