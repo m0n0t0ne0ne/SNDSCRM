@@ -25,11 +25,12 @@ import java.net.URLEncoder
  *    Genius (plain text). Off by default.
  *
  * Fallback results are only kept when title, artist and length match the track.
- * LRCLIB asks clients to send a descriptive User-Agent; we oblige.
+ * Requests go out as the desktop Chrome the app presents itself as everywhere else, not under
+ * an app name (SNDSCRM sends nothing that names it).
  */
 object LyricsApi {
     private const val LRCLIB = "https://lrclib.net/api"
-    private const val UA = "Myspoti (https://github.com/)"
+    private val UA = app.myspoti.spotify.gql.SpotifyHttp.USER_AGENT
 
     /** What the resolver needs to know about a track. */
     data class Track(

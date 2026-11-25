@@ -18,15 +18,14 @@ android {
     namespace = "app.myspoti.engine"
     compileSdk = 37
 
-    // Two channels that install side by side: betas ("2.0.0-beta.3") stay "app.myspoti",
-    // signed with the first key, as "Myspoti Beta"; releases are "app.myspoti.stable",
-    // signed with their own key, as "Myspoti".
+    // SNDSCRM's app id is "app.sndscrm", whatever the build: it is also the name Android's WebView
+    // stamps on the page's requests (X-Requested-With), so no "myspoti" goes out in it.
     // Local builds (no version given) are on the beta side, like the phone test builds.
     val version = (findProperty("appVersionName") as String?) ?: "2.4.0-soundscream"
     // "-beta" as in UpdateChecker.isBeta, one predicate for the app id, the label and the log stripping.
     val beta = findProperty("appVersionName") == null || version.contains("-beta")
     defaultConfig {
-        applicationId = if (beta) "app.myspoti" else "app.myspoti.stable"
+        applicationId = "app.sndscrm"
         manifestPlaceholders["appLabel"] = if (beta) "SoundScream Beta" else "SoundScream"
         // The short name under the home-screen icon.
         manifestPlaceholders["launcherLabel"] = "SNDSCR"
@@ -88,10 +87,9 @@ android {
             // Real key when provided (CI releases); otherwise the debug key, so a local
             // release build installs over the debug one while testing.
             signingConfig = signingConfigs.getByName(if (hasReleaseKey) "release" else "debug")
-            // -PoverDev: the optimised build under the dev app's id, to measure the speed of a
-            // beta on the test phone without replacing the signed beta installed there.
+            // -PoverDev (the release workflow): the app's label without "Beta". No id suffix: the
+            // released app is "app.sndscrm" itself.
             if (findProperty("overDev") != null) {
-                applicationIdSuffix = ".dev"
                 manifestPlaceholders["appLabel"] = "SoundScream"
             }
             isMinifyEnabled = true

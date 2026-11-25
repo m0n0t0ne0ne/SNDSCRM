@@ -44,7 +44,7 @@ Read `docs/SOUNDSCREAM.md` before changing anything.
 
 Edit `release/NOTES.md`, put a new version such as `v2.4.0-soundscream.3` in `release/VERSION`
 and push to `main`. `.github/workflows/release.yml` builds the arm64 APK, checks its package
-(`app.myspoti.dev`) and signing certificate, and publishes it on GitHub Releases. The key is the
+(`app.sndscrm`) and signing certificate, and publishes it on GitHub Releases. The key is the
 Actions secret `SOUNDSCREAM_KEYSTORE_B64`.
 
 ## Building locally

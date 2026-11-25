@@ -210,7 +210,7 @@ internal class LoginRelay(
     }
 
     private fun reply(id: Int, doc: String, status: Int, headersJson: String, body: String, finalUrl: String) {
-        val script = "window.__mspLoginDone && window.__mspLoginDone($id, $status, ${JSONObject.quote(headersJson)}, " +
+        val script = "window.__crLoginDone && window.__crLoginDone($id, $status, ${JSONObject.quote(headersJson)}, " +
             "${JSONObject.quote(body)}, ${JSONObject.quote(finalUrl)}, ${JSONObject.quote(doc)})"
         main.post { view.evaluateJavascript(script, null) }
     }
@@ -260,7 +260,7 @@ internal class LoginRelay(
         /** Off: the sign-in goes the WebView's way, as before this relay. */
         const val ENABLED = true
 
-        private const val CHANNEL = "MyspotiLogin"
+        private const val CHANNEL = "__cr_login"
         private val ORIGINS = setOf("https://accounts.spotify.com", "https://challenge.spotify.com")
         private const val MAX_REDIRECTS = 8
 
@@ -298,14 +298,14 @@ internal class LoginRelay(
         /** Wraps the sign-in page's `fetch` for requests with a body to the sign-in hosts. */
         private val SCRIPT = """
             (() => {
-              if (window.__mspLoginInstalled || !window.$CHANNEL) return;
-              window.__mspLoginInstalled = true;
+              if (window.__crLoginInstalled || !window.$CHANNEL) return;
+              window.__crLoginInstalled = true;
               const hosts = /^https:\/\/(accounts|challenge)\.spotify\.com\//;
               const doc = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
               const pending = new Map();
               let seq = 0;
               const post = (m) => { try { window.$CHANNEL.postMessage(JSON.stringify(m)); } catch (e) { /* host gone */ } };
-              window.__mspLoginDone = (id, status, headers, body, finalUrl, from) => {
+              window.__crLoginDone = (id, status, headers, body, finalUrl, from) => {
                 if (from !== doc) return;
                 const p = pending.get(id);
                 if (!p) return;
