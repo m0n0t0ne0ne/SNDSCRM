@@ -291,6 +291,7 @@ private fun MyProfilePhoto(p: UserProfile?, userName: String, onChanged: () -> U
         scope.launch {
             val prepared = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 runCatching { com.music.spotui.ui.components.ProfilePhoto.prepare(context, picked) }
+                    .onFailure { app.myspoti.host.android.Logbook.log("profile picture: photo not prepared: ${it.javaClass.simpleName}: ${it.message?.take(120)}") }
                     .getOrDefault(com.music.spotui.ui.components.ProfilePhoto.Result.Unreadable)
             }
             busy = false
