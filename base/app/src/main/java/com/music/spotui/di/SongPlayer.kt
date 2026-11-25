@@ -38,6 +38,8 @@ object SongPlayer {
     private const val PENDING_MS = 6000L
     /** A song left this close to its end ended by itself (not a skip): see the autoplay check. */
     private const val AUTOPLAY_END_MARGIN_MS = 4_000L
+    /** How long a song stopped by autoplay off is kept paused against the page starting it again. */
+    private const val STOP_HOLD_MS = 4_000L
     /** The longest a song is shown loading while the extensions are asked (they answer sooner). */
     private const val ROUTE_HOLD_MS = 40_000L
     /** The end-of-track timer pauses this close to the end (before the next item starts). */
@@ -652,7 +654,12 @@ object SongPlayer {
         // autoplay): with autoplay off it is stopped just before its end, on itself ([lastSongWatch]).
         lastBeforeAutoplay = item != null && uri.startsWith(SPOTIFY_TRACK_PREFIX) && s.repeat == Repeat.OFF &&
             (ctx == uri || s.next?.provider == "autoplay")
-        if (lastBeforeAutoplay && playing) { main.removeCallbacks(lastSongWatch); main.post(lastSongWatch) }
+        // Started again by the seek back to its start: paused once more, where it is (at its start).
+        if (!s.isPaused && uri == stoppedUri && SystemClock.elapsedRealtime() < stoppedUntil) {
+            stoppedUntil = 0L
+            app.myspoti.host.android.Logbook.log("autoplay off: the seek back started the song again, paused")
+            pauseSilently()
+        } else if (lastBeforeAutoplay && playing) { main.removeCallbacks(lastSongWatch); main.post(lastSongWatch) }
         currentContextUri = s.contextUri.orEmpty()
         if (item != null) { checkEndOfTrackTimer(id); currentTrackId = id }
         _nowPlaying.value = NowPlaying(
@@ -1339,6 +1346,7 @@ object SongPlayer {
     /** [by]: who asked, for the diagnostic (the app's screens, the media session, an extension...). */
     fun play(by: String = "user") {
         app.myspoti.host.android.Logbook.log("play asked by $by")
+        stoppedUntil = 0L   // the user plays the stopped song again: no longer held
         if (by != BY_CALL) callPause.userActed()
         if (routing) return // the song asked for starts by itself
         if (LocalPlayer.active.value) { Haptics.click(); LocalPlayer.resume(); return }
@@ -2442,6 +2450,14 @@ object SongPlayer {
     @Volatile private var lastBeforeAutoplay = false
 
     /**
+     * The song [lastSongWatch] just stopped, and until when it stays stopped: the page can start
+     * it again on the seek back to its start (measured: paused, then playing right after the
+     * seek). A play the user asks for meanwhile clears it ([play]).
+     */
+    private var stoppedUri = ""
+    private var stoppedUntil = 0L
+
+    /**
      * Autoplay off: the last song before Spotify's picks is paused just before its end and put
      * back at its start, so the player stays on it (as Spotify's own apps do) instead of moving
      * on to a song only to pause it there (reported: a paused stranger with a blank cover). The
@@ -2449,12 +2465,17 @@ object SongPlayer {
      */
     private val lastSongWatch = object : Runnable {
         override fun run() {
-            if (!lastBeforeAutoplay || LocalPlayer.active.value || !isPlaying()) return
+            // This phone's own playback only: a song another device plays (another install on the
+            // same account seen through Connect) is that device's to stop (seen 25/11: two apps
+            // both stopping one song, and the remote seek started it again).
+            if (!lastBeforeAutoplay || LocalPlayer.active.value || !isPlaying() || _activeDevice.value != null) return
             val duration = getDuration()
             if (duration > 0 && getCurrentPosition() >= duration - END_OF_TRACK_MARGIN_MS &&
                 !com.music.spotui.data.preferences.AutoplayPref.on) {
                 lastBeforeAutoplay = false
                 app.myspoti.host.android.Logbook.log("autoplay off: stopped at the end of the song, back to its start")
+                stoppedUri = _nowPlaying.value.uri
+                stoppedUntil = SystemClock.elapsedRealtime() + STOP_HOLD_MS
                 pauseSilently()
                 seekTo(0)
                 return
