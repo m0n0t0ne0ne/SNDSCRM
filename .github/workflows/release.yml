@@ -71,7 +71,7 @@ jobs:
         run: |
           apk=base/app/build/outputs/apk/release/app-release.apk
           tools="$ANDROID_HOME/build-tools/37.0.0"
-          "$tools/aapt2" dump badging "$apk" | grep -q "^package: name='app.myspoti.dev'"
+          "$tools/aapt2" dump badging "$apk" | grep -q "^package: name='app.sndscrm'"
           "$tools/apksigner" verify --print-certs "$apk" | grep -q "SHA-256 digest: $CERT_SHA256"
           cp "$apk" SoundScream.apk
           sha256sum SoundScream.apk

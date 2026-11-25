@@ -1,7 +1,8 @@
 # SoundScream notes
 
 SoundScream is Myspoti v2.1.0 plus SoundScream's changes, with the playback engine from
-Myspoti v2.4.0. The app ID is `app.myspoti.dev`, signed with the owner's debug key
+Myspoti v2.4.0. The app ID is `app.sndscrm` (`app.myspoti.dev` until soundscream.6: Android's
+WebView sends the app ID in an `X-Requested-With` header), signed with the owner's debug key
 (certificate SHA-256 `D2:20:45:25:74:A7:D4:78:47:8B:2E:34:6F:EE:12:27:64:83:FE:EE:2D:5E:81:7E:3F:BE:CD:54:62:57:F4:26`).
 Releases are arm64 only and R8-shrunk (`-PoverDev -Pabis=arm64-v8a :app:assembleRelease`).
 
