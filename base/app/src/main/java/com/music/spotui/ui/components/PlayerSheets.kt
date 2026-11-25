@@ -43,6 +43,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.Equalizer
@@ -519,6 +520,14 @@ fun QueueSheet(contextName: String, onDismiss: () -> Unit) {
                     }
                 }
                 item(key = "queue") { QueueList(q, contextName, editing, listState) }
+                // What comes after the last song, as the Autoplay button below sets it.
+                item(key = "autoplay-hint") {
+                    Text(
+                        stringResource(if (com.music.spotui.data.preferences.AutoplayPref.on) R.string.autoplay_hint_on else R.string.autoplay_hint_off),
+                        color = com.music.spotui.ui.theme.AppMuted, fontSize = 13.sp,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -530,6 +539,11 @@ fun QueueSheet(contextName: String, onDismiss: () -> Unit) {
                 val mode = SongPlayer.repeatMode.value
                 QueueAction(when (mode) { 2 -> Icons.Default.RepeatOne; 3 -> RepeatIcons.once; else -> Icons.Default.Repeat }, stringResource(R.string.np_content_desc_repeat), mode != 0, Modifier.weight(1f)) {
                     SongPlayer.cycleRepeat()
+                }
+                val autoplay = com.music.spotui.data.preferences.AutoplayPref.on
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                QueueAction(Icons.Default.AllInclusive, stringResource(R.string.settings_autoplay_title), autoplay, Modifier.weight(1f)) {
+                    com.music.spotui.data.preferences.AutoplayPref.set(ctx, !autoplay)
                 }
                 QueueAction(Icons.Outlined.Timer, stringResource(R.string.np_content_desc_sleep_timer), SongPlayer.sleepEndsAt.value != null, Modifier.weight(1f)) {
                     showTimer = true
