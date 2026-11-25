@@ -1,5 +1,4 @@
-- **Safer sign-in:** when Spotify's sign-in redirects, SoundScream now sends the right cookies for each step, and never your Spotify session to another site.
-- **Tidier logs:** a test line written on every song change is gone.
+- **Changing your profile picture works:** photos of any format the photo picker offers (JPEG, PNG, HEIF, WebP, AVIF) are read and turned the right way up, and the change no longer stops with "Try again".
 
 **Install:** download `SoundScream.apk` and install it over your current copy. It's built for arm64 phones.
 
