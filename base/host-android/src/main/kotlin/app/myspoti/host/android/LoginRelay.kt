@@ -240,10 +240,19 @@ internal class LoginRelay(
             set.joinToString(",") { it.substringBefore('=').take(24) })
     }
 
-    /** Hop by hop, so every redirect's cookies reach the jar (OkHttp follows them for [following]). */
+    /**
+     * Hop by hop (OkHttp follows the redirects for [following]): each hop carries the jar's
+     * cookies for its own address, read anew so a cookie the previous hop set goes along, and
+     * none off the sign-in hosts (a redirect elsewhere never gets the Spotify session). Every
+     * hop's cookies reach the jar.
+     */
     private val cookieHops = okhttp3.Interceptor { chain ->
-        val response = chain.proceed(chain.request())
-        keepCookies(chain.request().url.toString(), response.headers)
+        val hop = chain.request().url.toString()
+        val sent = chain.request().newBuilder().removeHeader("Cookie").apply {
+            if (isLoginHost(hop)) runCatching { cookies().getCookie(hop) }.getOrNull()?.takeIf { it.isNotBlank() }?.let { header("Cookie", it) }
+        }.build()
+        val response = chain.proceed(sent)
+        keepCookies(hop, response.headers)
         response
     }
 

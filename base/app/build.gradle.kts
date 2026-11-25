@@ -22,7 +22,7 @@ android {
     // stamps on the page's requests (X-Requested-With), so no "myspoti" goes out in it.
     // Local builds (no version given) are on the beta side, like the phone test builds.
     val version = (findProperty("appVersionName") as String?) ?: "2.4.0-soundscream"
-    // "-beta" as in UpdateChecker.isBeta, one predicate for the app id, the label and the log stripping.
+    // "-beta" as in UpdateChecker.isBeta, one predicate for the label and the log stripping.
     val beta = findProperty("appVersionName") == null || version.contains("-beta")
     defaultConfig {
         applicationId = "app.sndscrm"

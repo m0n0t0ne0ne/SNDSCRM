@@ -642,8 +642,6 @@ object SongPlayer {
         val ctx = s.contextUri.orEmpty()
         val endedNaturally = lengthBefore > 0 && predicted >= lengthBefore - AUTOPLAY_END_MARGIN_MS
         val pastSingleSong = trackChanged && endedNaturally && ctx.startsWith(SPOTIFY_TRACK_PREFIX) && uri != ctx
-        if (item != null && trackChanged)
-            app.myspoti.host.android.Logbook.log("next song: provider=${item.provider ?: "-"} context=${ctx.substringBeforeLast(':')} ended=$endedNaturally autoplay=${com.music.spotui.data.preferences.AutoplayPref.on}")
         if (item != null && (item.provider == "autoplay" || pastSingleSong) && uri.startsWith(SPOTIFY_TRACK_PREFIX) &&
             uri != autoplayHandledUri && !com.music.spotui.data.preferences.AutoplayPref.on) {
             autoplayHandledUri = uri
