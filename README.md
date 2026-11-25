@@ -2,7 +2,7 @@
 
 
 
-## Changes from Myspoti
+## Changes
 
 - A modernized Classic look, and the SoundScream name and icon
 - Removed: the Immersive look, extension screens, music downloads, crossfade, donation prompts,
