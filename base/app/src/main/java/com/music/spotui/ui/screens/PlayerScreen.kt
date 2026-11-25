@@ -51,6 +51,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AllInclusive
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -1428,6 +1429,25 @@ fun PlayerConnectRow(
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // Autoplay (Settings → Autoplay) without going to the settings: similar songs after the
+            // last one, or a stop. Green when on, as in the queue.
+            val autoplay = com.music.spotui.data.preferences.AutoplayPref.on
+            Icon(
+                imageVector = Icons.Default.AllInclusive,
+                tint = if (autoplay) com.music.spotui.ui.theme.AppAccent else Color.White,
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) {
+                        com.music.spotui.data.preferences.AutoplayPref.set(context, !autoplay)
+                        android.widget.Toast.makeText(context, context.getString(if (!autoplay) R.string.autoplay_on else R.string.autoplay_off),
+                            android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                contentDescription = stringResource(if (autoplay) R.string.autoplay_on else R.string.autoplay_off),
+            )
+            Spacer(modifier = Modifier.width(28.dp))
             var shareMenu by remember { mutableStateOf(false) }
             val shareScope = androidx.compose.runtime.rememberCoroutineScope()
             Box {

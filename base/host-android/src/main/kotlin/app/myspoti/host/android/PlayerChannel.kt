@@ -17,9 +17,14 @@ import androidx.webkit.WebViewFeature
  * Returns the fallback channel to arm at each page start, or null when the listener is used.
  */
 @SuppressLint("JavascriptInterface")
-internal fun WebView.exposeToPlayer(name: String, onMessage: (String) -> Unit): PlayerChannel? {
+internal fun WebView.exposeToPlayer(name: String, onMessage: (String) -> Unit): PlayerChannel? =
+    exposeTo(name, setOf(PLAYER_ORIGIN), onMessage)
+
+/** [exposeToPlayer] for the main frames of [origins] (the sign-in pages' channel, see [LoginRelay]). */
+@SuppressLint("JavascriptInterface")
+internal fun WebView.exposeTo(name: String, origins: Set<String>, onMessage: (String) -> Unit): PlayerChannel? {
     if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-        WebViewCompat.addWebMessageListener(this, name, setOf(PLAYER_ORIGIN)) { _, message, _, isMainFrame, _ ->
+        WebViewCompat.addWebMessageListener(this, name, origins) { _, message, _, isMainFrame, _ ->
             if (isMainFrame) message.data?.let(onMessage)
         }
         return null
