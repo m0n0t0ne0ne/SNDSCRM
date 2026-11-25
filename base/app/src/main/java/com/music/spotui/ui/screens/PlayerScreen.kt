@@ -1430,18 +1430,13 @@ fun PlayerConnectRow(
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Autoplay (Settings → Autoplay) without going to the settings: similar songs after the
-            // last one, or a stop. Green with a dot when on, as the shuffle button shows it.
+            // last one, or a stop. Green when on, as in the queue.
             val autoplay = com.music.spotui.data.preferences.AutoplayPref.on
             Icon(
                 imageVector = Icons.Default.AllInclusive,
                 tint = if (autoplay) com.music.spotui.ui.theme.AppAccent else Color.White,
                 modifier = Modifier
                     .size(24.dp)
-                    .drawWithContent {
-                        drawContent()
-                        if (autoplay) drawCircle(com.music.spotui.ui.theme.AppAccent, radius = 2.dp.toPx(),
-                            center = androidx.compose.ui.geometry.Offset(size.width / 2, size.height + 6.dp.toPx()))
-                    }
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,

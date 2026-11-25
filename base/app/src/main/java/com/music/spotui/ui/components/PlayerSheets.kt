@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -498,7 +499,12 @@ fun QueueSheet(contextName: String, onDismiss: () -> Unit) {
                 }
                 PillButton(if (editing) "OK" else stringResource(R.string.curation_actions_edit_button_title)) { editing = !editing }
             }
-            LazyColumn(state = listState, modifier = Modifier.weight(1f)) {
+            // The list runs under the action icons, which sit on a fade (clear at its top, the
+            // sheet's colour at the icons): no hard line between the queue and its actions.
+            // The list's bottom padding lets its last song scroll clear of the icons.
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            LazyColumn(state = listState, modifier = Modifier.fillMaxSize(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = QUEUE_ACTIONS_SPACE)) {
                 q.current?.let { cur ->
                     item(key = "current") {
                         QueueSheetRow(cur, current = true, trailing = {
@@ -529,9 +535,15 @@ fun QueueSheet(contextName: String, onDismiss: () -> Unit) {
                     )
                 }
             }
+            val sheet = SheetColor
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                        0f to sheet.copy(alpha = 0f), 0.3f to sheet.copy(alpha = 0.75f), 0.55f to sheet))
+                    .padding(start = 16.dp, end = 16.dp, top = 40.dp, bottom = 6.dp),
             ) {
                 QueueAction(Icons.Default.Shuffle, stringResource(R.string.play_mode_item_shuffle_title), shuffle, Modifier.weight(1f)) {
                     SongPlayer.setShuffle(!shuffle); state.shuffle.value = !shuffle
@@ -549,9 +561,13 @@ fun QueueSheet(contextName: String, onDismiss: () -> Unit) {
                     showTimer = true
                 }
             }
+            }
         }
     }
 }
+
+/** Room under the queue's last row for the action icons and their fade. */
+private val QUEUE_ACTIONS_SPACE = 88.dp
 
 @Composable
 private fun PillButton(label: String, onClick: () -> Unit) {
@@ -1003,16 +1019,17 @@ private fun QueueSheetRow(
 
 @Composable
 private fun QueueAction(icon: ImageVector, label: String, active: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    // A bare icon in the artist names' grey, green when on; its name is for screen readers.
+    Box(
+        contentAlignment = Alignment.Center,
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(tone(0xFF3E3E3E))
-            .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
+            .clickable(
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
+            .padding(vertical = 12.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = if (active) Green else AppText, modifier = Modifier.size(26.dp))
-        Spacer(Modifier.height(4.dp))
-        Text(label, color = if (active) Green else AppText, fontSize = 13.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        Icon(icon, contentDescription = label, tint = if (active) Green else com.music.spotui.ui.theme.AppMuted, modifier = Modifier.size(24.dp))
     }
 }
