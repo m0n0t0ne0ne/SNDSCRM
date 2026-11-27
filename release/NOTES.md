@@ -1,4 +1,4 @@
-- **Changing your profile picture works:** photos of any format the photo picker offers (JPEG, PNG, HEIF, WebP, AVIF) are read and turned the right way up, and the change no longer stops with "Try again".
+- **No more silent playback after an ad break:** if the hidden player stays muted once the break is over, the app now unmutes it. Before, a song could play and its progress bar move with no sound.
 
 **Install:** download `SoundScream.apk` and install it over your current copy. It's built for arm64 phones.
 
