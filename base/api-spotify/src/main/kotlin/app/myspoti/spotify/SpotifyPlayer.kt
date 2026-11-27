@@ -1071,6 +1071,11 @@ class SpotifyPlayer(private val bridge: Bridge, private val scope: CoroutineScop
         // (Not while the song is hushed on purpose.)
         if (!clipHushed && !localMuted && media != null && media.active != false && media.own > 0.001 && media.level < media.own * 0.5) {
             bridge.logger?.invoke("page player silent during a song: level ${media.level} back to ${media.own}")
+            // No ad mute on this side, yet the page may still hold one: a mute sent again during the
+            // break ("media.mute" on, retried) can land after the unmute, and the page's guard then
+            // pulls every level set back to silent. Seen 27/11: the level put back every 6 s, the song
+            // silent for good. A song plays here (no ad, see the top), so the page's flag goes too.
+            if (!adMuted) runCatching { bridge.call("media.mute", buildJsonObject { put("on", false) }) }
             runCatching { restoreLevel() }
         }
     }
